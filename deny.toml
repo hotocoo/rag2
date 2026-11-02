@@ -2,7 +2,7 @@
 [licenses]
 allow = [
   "Apache-2.0", "Apache-2.0 WITH LLVM-exception", "MIT", "BSD-2-Clause", "BSD-3-Clause",
-  "ISC", "Zlib", "Unicode-3.0", "Unicode-DFS-2016", "CC0-1.0", "MPL-2.0", "OpenSSL", "BSL-1.0",
+  "ISC", "0BSD", "Zlib", "Unicode-3.0", "Unicode-DFS-2016", "CC0-1.0", "MPL-2.0", "OpenSSL", "BSL-1.0",
   "CDLA-Permissive-2.0",
 ]
 confidence-threshold = 0.9
@@ -10,6 +10,8 @@ confidence-threshold = 0.9
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
+# Internal crates are path dependencies (unversioned by design, never published).
+allow-wildcard-paths = true
 
 [sources]
 unknown-registry = "deny"

@@ -66,7 +66,21 @@ Resume point for any new working session. Update the checkboxes as work lands.
 - Calibration: rag2-bench fits Platt (Newton + ridge) on half the queries; held-out ECE
   0.31-0.37 -> 0.07-0.11 on SciFact (hash embedder runs).
 - OIDC verified with mock JWKS; alg/key-type allow-list prevents algorithm confusion.
-- Commits: none yet (user rule: commit only when asked).
+- Repository: github.com/hotocoo/rag2 (private), branch `main`.
+- Supply chain: `cargo deny check licenses bans sources` passes (0BSD allowed for varint-rs via
+  fjall; internal path deps exempt from wildcard rule); `cargo audit --deny warnings` passes with
+  one reviewed exception (`paste`, unmaintained, build-time only).
+- Tests never mutate the process environment (secrets via `file:` references).
+
+## Known gaps (unmeasured or unbuilt, not hidden)
+
+- Test coverage has not been measured (`cargo llvm-cov` not installed here); 146 tests pass.
+- The console has no automated tests; it was verified manually in Chrome (login, pipeline edit
+  -> preview -> apply, playground, connectors build).
+- ModernBERT calibration coefficients not yet fitted (calibration measured with hash runs only).
+- Laya numerical parity on candle 0.11 unmeasured (no checkpoint on this machine).
+- No automatic failover; promotion is orchestrator/operator driven by design.
+- CI cold builds compile candle + wasmtime: expect 10+ minutes for the test job.
 
 ## Phases
 

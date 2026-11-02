@@ -368,5 +368,16 @@ pub async fn serve(
     Ok(())
 }
 
+/// A `file:` secret holding `value`, in a per-process temp directory. Tests use files rather than
+/// environment variables: mutating the environment races with threads reading it.
+#[cfg(test)]
+pub(crate) fn test_secret(name: &str, value: &str) -> rag2_config::schema::SecretRef {
+    let dir = std::env::temp_dir().join(format!("rag2-test-secrets-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("secret dir");
+    let path = dir.join(name);
+    std::fs::write(&path, value).expect("secret file");
+    rag2_config::schema::SecretRef::File(path.to_string_lossy().into_owned())
+}
+
 #[cfg(test)]
 mod tests;

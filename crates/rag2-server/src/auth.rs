@@ -331,12 +331,12 @@ mod tests {
     use super::*;
     use rag2_config::schema::SecretRef;
 
-    fn profile_with_key(secret_env: &str, roles: &[&str], tenants: &[&str]) -> Arc<Profile> {
+    fn profile_with_key(secret: SecretRef, roles: &[&str], tenants: &[&str]) -> Arc<Profile> {
         let mut p = Profile::minimal("t");
         p.security.auth = AuthConfig::ApiKeys {
             keys: vec![ApiKey {
                 id: "ci".into(),
-                secret: SecretRef::Env(secret_env.into()),
+                secret,
                 roles: roles.iter().map(|s| s.to_string()).collect(),
                 tenants: tenants.iter().map(|s| s.to_string()).collect(),
             }],
@@ -356,9 +356,8 @@ mod tests {
     #[tokio::test]
     async fn api_keys_authenticate_and_scope_permissions_and_tenants() {
         let secret = "k".repeat(MIN_API_KEY_LEN);
-        unsafe_env("RAG2_TEST_KEY_A", &secret);
         let a = Authenticator::from_profile(profile_with_key(
-            "RAG2_TEST_KEY_A",
+            crate::test_secret("key-a", &secret),
             &["reader"],
             &["acme"],
         ))
@@ -387,10 +386,9 @@ mod tests {
 
     #[test]
     fn short_or_missing_keys_are_refused_at_activation() {
-        unsafe_env("RAG2_TEST_KEY_SHORT", "short");
         assert!(
             Authenticator::from_profile(profile_with_key(
-                "RAG2_TEST_KEY_SHORT",
+                crate::test_secret("short", "short"),
                 &["reader"],
                 &["*"]
             ))
@@ -398,22 +396,12 @@ mod tests {
         );
         assert!(
             Authenticator::from_profile(profile_with_key(
-                "RAG2_TEST_KEY_UNSET_XYZ",
+                SecretRef::File("/nonexistent/rag2/secret".into()),
                 &["reader"],
                 &["*"]
             ))
             .is_err()
         );
-    }
-
-    fn unsafe_env(k: &str, v: &str) {
-        // Edition 2024 marks set_var unsafe because it races other threads reading the
-        // environment; these keys are unique per test and only read by the same test.
-        #[allow(unsafe_code)]
-        // SAFETY: the variable name is unique to one test; no other thread reads it concurrently.
-        unsafe {
-            std::env::set_var(k, v)
-        };
     }
 
     mod oidc {

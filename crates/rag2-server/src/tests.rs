@@ -1,20 +1,12 @@
 use super::*;
 use axum::body::Body;
 use axum::http::{Request, header};
-use rag2_config::schema::{ApiKey, AuthConfig, Profile, SecretRef, TenantConfig};
+use rag2_config::schema::{ApiKey, AuthConfig, Profile, TenantConfig};
 use rag2_config::{ConfigManager, FsConfigStore};
 use tower::ServiceExt;
 
 const ADMIN_KEY: &str = "admin-key-0123456789abcdef";
 const READER_KEY: &str = "reader-key-0123456789abcdef";
-
-fn set_env(k: &str, v: &str) {
-    #[allow(unsafe_code)]
-    // SAFETY: test-only variables with unique names, set before any thread reads them.
-    unsafe {
-        std::env::set_var(k, v)
-    };
-}
 
 struct Harness {
     _dir: tempfile::TempDir,
@@ -23,8 +15,6 @@ struct Harness {
 }
 
 fn harness(edit: impl FnOnce(&mut Profile)) -> Harness {
-    set_env("RAG2_SRV_TEST_ADMIN", ADMIN_KEY);
-    set_env("RAG2_SRV_TEST_READER", READER_KEY);
     let dir = tempfile::tempdir().expect("tempdir");
     let mut p = Profile::minimal("srv");
     p.storage.data_dir = dir.path().join("data").to_string_lossy().into_owned();
@@ -34,13 +24,13 @@ fn harness(edit: impl FnOnce(&mut Profile)) -> Harness {
         keys: vec![
             ApiKey {
                 id: "admin".into(),
-                secret: SecretRef::Env("RAG2_SRV_TEST_ADMIN".into()),
+                secret: crate::test_secret("admin", ADMIN_KEY),
                 roles: vec!["admin".into()],
                 tenants: vec!["*".into()],
             },
             ApiKey {
                 id: "reader".into(),
-                secret: SecretRef::Env("RAG2_SRV_TEST_READER".into()),
+                secret: crate::test_secret("reader", READER_KEY),
                 roles: vec!["reader".into()],
                 tenants: vec!["acme".into()],
             },
@@ -509,13 +499,12 @@ async fn webhooks_deliver_signed_events() {
         .expect("bind");
     let addr = l.local_addr().expect("addr");
     tokio::spawn(async move { axum::serve(l, receiver).await });
-    set_env("RAG2_SRV_TEST_HOOK", "hook-secret");
     let h = harness(|p| {
         p.webhooks.push(rag2_config::schema::Webhook {
             name: "audit-sink".into(),
             url: format!("http://{addr}/hook"),
             events: vec![rag2_config::schema::WebhookEvent::DocumentsIngested],
-            secret: Some(SecretRef::Env("RAG2_SRV_TEST_HOOK".into())),
+            secret: Some(crate::test_secret("hook", "hook-secret")),
             tenants: vec![],
             timeout_ms: 2000,
             max_retries: 0,

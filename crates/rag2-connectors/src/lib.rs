@@ -274,6 +274,15 @@ mod tests {
         );
     }
 
+    /// Header secrets as `file:` references (tests never mutate the process environment).
+    fn secret_file(value: &str) -> SecretRef {
+        let dir = std::env::temp_dir().join(format!("rag2-conn-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("dir");
+        let path = dir.join(value.replace(' ', "_"));
+        std::fs::write(&path, value).expect("write");
+        SecretRef::File(path.to_string_lossy().into_owned())
+    }
+
     #[tokio::test(flavor = "multi_thread")]
     async fn json_apis_map_records_and_authenticate() {
         let app = axum::Router::new().route(
@@ -296,14 +305,9 @@ mod tests {
             .expect("bind");
         let addr = l.local_addr().expect("addr");
         tokio::spawn(async move { axum::serve(l, app).await });
-        #[allow(unsafe_code)]
-        // SAFETY: test-only variable with a unique name, set before any reader runs.
-        unsafe {
-            std::env::set_var("RAG2_CONN_TEST_TOKEN", "Bearer t0ken")
-        };
         let src = |token: &str| SourceConfig::HttpJson {
             url: format!("http://{addr}/tickets"),
-            headers: [("authorization".to_string(), SecretRef::Env(token.into()))].into(),
+            headers: [("authorization".to_string(), secret_file(token))].into(),
             items: "/data".into(),
             id: "/id".into(),
             text: "/body".into(),
@@ -311,7 +315,7 @@ mod tests {
             metadata: [("status".to_string(), "/status".to_string())].into(),
             timeout_ms: 5_000,
         };
-        let good = src("RAG2_CONN_TEST_TOKEN");
+        let good = src("Bearer t0ken");
         let docs = tokio::task::spawn_blocking(move || fetch(&good))
             .await
             .expect("join")
@@ -320,12 +324,7 @@ mod tests {
         assert_eq!(docs[0].id.as_str(), "7");
         assert_eq!(docs[0].title.as_deref(), Some("Pump noise"));
         assert_eq!(docs[0].metadata["status"], "open");
-        #[allow(unsafe_code)]
-        // SAFETY: as above.
-        unsafe {
-            std::env::set_var("RAG2_CONN_TEST_BAD", "Bearer wrong")
-        };
-        let bad = src("RAG2_CONN_TEST_BAD");
+        let bad = src("Bearer wrong");
         let err = tokio::task::spawn_blocking(move || test(&bad))
             .await
             .expect("join")
