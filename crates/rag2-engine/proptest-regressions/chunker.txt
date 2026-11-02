@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 094df3ec13f577a001fba80e73a54ec948779b139d18edeb1b7109036c90e163 # shrinks to words = ["aaaaa", "aa", "aaaa", "aaa", "aaaaaaaaaaaa", "aaa"], max = 20, overlap = 9

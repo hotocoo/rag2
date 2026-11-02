@@ -1,0 +1,2410 @@
+{
+  "components": {
+    "schemas": {
+      "AbstainReason": {
+        "enum": [
+          "no_evidence",
+          "low_confidence",
+          "contradictory",
+          "decision_model"
+        ],
+        "type": "string"
+      },
+      "Abstention": {
+        "description": "Why the engine declined to answer.",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/AbstainReason"
+          }
+        },
+        "required": [
+          "reason",
+          "detail"
+        ],
+        "type": "object"
+      },
+      "Activation": {
+        "properties": {
+          "action": {
+            "description": "`activate`, `rollback` or `reload`.",
+            "type": "string"
+          },
+          "at_ms": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "author": {
+            "type": "string"
+          },
+          "environment": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "at_ms",
+          "author",
+          "action"
+        ],
+        "type": "object"
+      },
+      "ActiveConfig": {
+        "properties": {
+          "environment": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hash": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "profile": true,
+          "version": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "hash",
+          "profile"
+        ],
+        "type": "object"
+      },
+      "Change": {
+        "oneOf": [
+          {
+            "properties": {
+              "op": {
+                "const": "add",
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "value": true
+            },
+            "required": [
+              "op",
+              "path",
+              "value"
+            ],
+            "type": "object"
+          },
+          {
+            "properties": {
+              "op": {
+                "const": "remove",
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "value": true
+            },
+            "required": [
+              "op",
+              "path",
+              "value"
+            ],
+            "type": "object"
+          },
+          {
+            "properties": {
+              "after": true,
+              "before": true,
+              "op": {
+                "const": "replace",
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "op",
+              "path",
+              "before",
+              "after"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "ChunkId": {
+        "description": "A chunk, numbered per tenant by storage. Dense `u64` so vector and lexical indexes key on it\nwithout string hashing on the hot path.",
+        "format": "uint64",
+        "minimum": 0,
+        "type": "integer"
+      },
+      "ChunkView": {
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "ordinal": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ordinal",
+          "text"
+        ],
+        "type": "object"
+      },
+      "ComponentHealth": {
+        "properties": {
+          "decision_models": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "embedders": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "embedders",
+          "decision_models"
+        ],
+        "type": "object"
+      },
+      "ConfidenceDetail": {
+        "properties": {
+          "agreement": {
+            "description": "Share of retrievers that ran and placed the top result in their own lists.",
+            "format": "float",
+            "type": "number"
+          },
+          "dense_similarity": {
+            "description": "Best dense cosine similarity among results (absent when dense did not run).",
+            "format": "float",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "raw": {
+            "format": "float",
+            "type": "number"
+          },
+          "term_coverage": {
+            "description": "Share of the query's content words found in the top evidence.",
+            "format": "float",
+            "type": "number"
+          }
+        },
+        "required": [
+          "raw",
+          "term_coverage",
+          "agreement"
+        ],
+        "type": "object"
+      },
+      "ConnectorStatus": {
+        "properties": {
+          "last_ok": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "last_run_ms": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SyncReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "ConnectorView": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "interval_s": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ConnectorStatus"
+          },
+          "tenant": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "tenant",
+          "kind",
+          "enabled",
+          "interval_s",
+          "status"
+        ],
+        "type": "object"
+      },
+      "Contradiction": {
+        "description": "Two pieces of evidence that disagree.",
+        "properties": {
+          "a": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "b": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "confidence": {
+            "format": "float",
+            "type": "number"
+          },
+          "detector": {
+            "description": "Which detector flagged it (configured by name).",
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "a",
+          "b",
+          "detector",
+          "reason",
+          "confidence"
+        ],
+        "type": "object"
+      },
+      "Document": {
+        "description": "A document as submitted for ingestion.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/DocumentId"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "source": {
+            "description": "Where the document came from (URL, path, connector record id). Carried into provenance.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "type": "object"
+      },
+      "DocumentId": {
+        "description": "A caller-chosen document id: 1..=512 bytes, no control characters.",
+        "type": "string"
+      },
+      "DocumentRecord": {
+        "description": "Stored per-document record: what was ingested and which chunks it produced.",
+        "properties": {
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/ChunkId"
+            },
+            "type": "array"
+          },
+          "content_hash": {
+            "description": "xxh3 of the full text, so unchanged re-ingests are skipped (incremental indexing).",
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "embedders": {
+            "description": "Embedders that stored vectors for this document's chunks.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "$ref": "#/components/schemas/DocumentId"
+          },
+          "ingested_at_ms": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "description": "Monotonic per document; bumped on every re-ingest that changed content.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "content_hash",
+          "chunks",
+          "ingested_at_ms"
+        ],
+        "type": "object"
+      },
+      "ErrorBody": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
+      "Evidence": {
+        "description": "A ranked, attributed chunk.",
+        "properties": {
+          "chunk_id": {
+            "$ref": "#/components/schemas/ChunkId"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          },
+          "score": {
+            "description": "Fused score after ranking policy.",
+            "format": "float",
+            "type": "number"
+          },
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/Signal"
+            },
+            "type": "array"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk_id",
+          "text",
+          "score",
+          "signals",
+          "provenance"
+        ],
+        "type": "object"
+      },
+      "IngestReport": {
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/IngestedDocument"
+            },
+            "type": "array"
+          },
+          "generation": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "searchable_within_ms": {
+            "description": "When the documents become searchable lexically: immediately, or within the commit interval.",
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "documents",
+          "generation",
+          "searchable_within_ms"
+        ],
+        "type": "object"
+      },
+      "IngestRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/Document"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "documents"
+        ],
+        "type": "object"
+      },
+      "IngestStatus": {
+        "oneOf": [
+          {
+            "enum": [
+              "created",
+              "updated"
+            ],
+            "type": "string"
+          },
+          {
+            "const": "unchanged",
+            "description": "Content hash unchanged: nothing re-indexed.",
+            "type": "string"
+          },
+          {
+            "const": "dropped",
+            "description": "An ingest plugin dropped the document.",
+            "type": "string"
+          }
+        ]
+      },
+      "IngestedDocument": {
+        "properties": {
+          "chunks": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "id": {
+            "$ref": "#/components/schemas/DocumentId"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IngestStatus"
+          },
+          "version": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "chunks",
+          "version"
+        ],
+        "type": "object"
+      },
+      "Issue": {
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          }
+        },
+        "required": [
+          "path",
+          "message",
+          "severity"
+        ],
+        "type": "object"
+      },
+      "Preview": {
+        "properties": {
+          "changes": {
+            "description": "Changes against the active version (after overlays on both sides).",
+            "items": {
+              "$ref": "#/components/schemas/Change"
+            },
+            "type": "array"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            },
+            "type": "array"
+          },
+          "valid": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid",
+          "issues",
+          "changes"
+        ],
+        "type": "object"
+      },
+      "ProfileSubmission": {
+        "additionalProperties": false,
+        "description": "A profile submission: the document as YAML or JSON text, or as a JSON object.",
+        "properties": {
+          "activate": {
+            "default": false,
+            "description": "Activate immediately after storing.",
+            "type": "boolean"
+          },
+          "comment": {
+            "default": "",
+            "type": "string"
+          },
+          "profile": {
+            "default": null
+          },
+          "text": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "Provenance": {
+        "description": "Where a piece of evidence came from, precise enough to cite.",
+        "properties": {
+          "chunk_ordinal": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "doc_id": {
+            "$ref": "#/components/schemas/DocumentId"
+          },
+          "doc_version": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "end": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "start": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "doc_id",
+          "doc_version",
+          "chunk_ordinal",
+          "start",
+          "end"
+        ],
+        "type": "object"
+      },
+      "QueryRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "additionalProperties": true,
+            "description": "Metadata equality filters. A list value matches documents having any of its values.",
+            "type": "object"
+          },
+          "hops": {
+            "default": null,
+            "description": "Extra retrieval hops, up to the pipeline's `multi_hop.max_hops`.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "include_context": {
+            "default": null,
+            "description": "Include the assembled context string (default true).",
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "no_cache": {
+            "default": false,
+            "description": "Bypass the query cache.",
+            "type": "boolean"
+          },
+          "pipeline": {
+            "default": null,
+            "description": "Pipeline name; defaults to the tenant's pipeline.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "query": {
+            "type": "string"
+          },
+          "top_k": {
+            "default": null,
+            "description": "Results to return; defaults to the pipeline's `top_k`, capped by `limits.max_top_k`.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "QueryResponse": {
+        "properties": {
+          "abstained": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Abstention"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cached": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "description": "Calibrated confidence that the evidence answers the query, in [0, 1].",
+            "format": "float",
+            "type": "number"
+          },
+          "confidence_detail": {
+            "$ref": "#/components/schemas/ConfidenceDetail",
+            "description": "Raw (pre-calibration) confidence and its components, for calibration and debugging."
+          },
+          "config_version": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "context": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contradictions": {
+            "items": {
+              "$ref": "#/components/schemas/Contradiction"
+            },
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array"
+          },
+          "hops": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "pipeline": {
+            "type": "string"
+          },
+          "query_rewritten": {
+            "description": "The query after `query_rewrite` plugins, when they changed it.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "route": {
+            "$ref": "#/components/schemas/Route",
+            "description": "Retrievers the router chose, and why."
+          },
+          "timings": {
+            "$ref": "#/components/schemas/StageTimings"
+          },
+          "warnings": {
+            "description": "Non-fatal problems (a decision model was unavailable, an embedder has no vectors yet).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "evidence",
+          "confidence",
+          "confidence_detail",
+          "pipeline",
+          "route",
+          "hops",
+          "config_version",
+          "timings",
+          "cached"
+        ],
+        "type": "object"
+      },
+      "RetrieverKind": {
+        "description": "The retrieval families RAG2 can route a query to.",
+        "oneOf": [
+          {
+            "const": "dense",
+            "description": "Embedding similarity over the vector index.",
+            "type": "string"
+          },
+          {
+            "const": "lexical",
+            "description": "BM25 over the full-text index.",
+            "type": "string"
+          },
+          {
+            "const": "structured",
+            "description": "Metadata predicates (exact match / ranges) over stored documents.",
+            "type": "string"
+          },
+          {
+            "const": "graph",
+            "description": "Neighbour expansion over chunks that share entities or documents.",
+            "type": "string"
+          }
+        ]
+      },
+      "Route": {
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "retrievers": {
+            "items": {
+              "$ref": "#/components/schemas/RetrieverKind"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "retrievers",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "Severity": {
+        "enum": [
+          "error",
+          "warning"
+        ],
+        "type": "string"
+      },
+      "Signal": {
+        "description": "How one retriever ranked a piece of evidence.",
+        "properties": {
+          "hop": {
+            "description": "Which hop of a multi-hop query found it (0 = the original query).",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "rank": {
+            "description": "1-based rank in that retriever's list.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "retriever": {
+            "$ref": "#/components/schemas/RetrieverKind"
+          },
+          "score": {
+            "format": "float",
+            "type": "number"
+          }
+        },
+        "required": [
+          "retriever",
+          "rank",
+          "score",
+          "hop"
+        ],
+        "type": "object"
+      },
+      "StageTimings": {
+        "description": "Time spent per stage, microseconds.",
+        "properties": {
+          "analyze_us": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "assemble_us": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "fuse_us": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "retrieve_us": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "route_us": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "total_us": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "route_us",
+          "retrieve_us",
+          "fuse_us",
+          "analyze_us",
+          "assemble_us",
+          "total_us"
+        ],
+        "type": "object"
+      },
+      "SubmitResult": {
+        "properties": {
+          "activated": {
+            "type": "boolean"
+          },
+          "version": {
+            "$ref": "#/components/schemas/VersionMeta"
+          }
+        },
+        "required": [
+          "version",
+          "activated"
+        ],
+        "type": "object"
+      },
+      "SyncReport": {
+        "description": "Outcome of a connector sync.",
+        "properties": {
+          "created": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "deleted": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "dropped": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "fetched": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "unchanged": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "updated": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fetched",
+          "created",
+          "updated",
+          "unchanged",
+          "dropped",
+          "deleted"
+        ],
+        "type": "object"
+      },
+      "TenantStats": {
+        "properties": {
+          "documents": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "generation": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "lexical_docs": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "vector_indexes": {
+            "items": {
+              "$ref": "#/components/schemas/VectorIndexStats"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "documents",
+          "generation",
+          "lexical_docs",
+          "vector_indexes"
+        ],
+        "type": "object"
+      },
+      "VectorIndexStats": {
+        "properties": {
+          "dim": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "embedder": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "vectors": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "embedder",
+          "kind",
+          "vectors",
+          "dim"
+        ],
+        "type": "object"
+      },
+      "VersionMeta": {
+        "properties": {
+          "author": {
+            "type": "string"
+          },
+          "comment": {
+            "default": "",
+            "type": "string"
+          },
+          "created_at_ms": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "hash": {
+            "description": "xxh3 of the canonical profile JSON, hex.",
+            "type": "string"
+          },
+          "version": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "created_at_ms",
+          "author",
+          "hash"
+        ],
+        "type": "object"
+      },
+      "Versions": {
+        "properties": {
+          "activations": {
+            "items": {
+              "$ref": "#/components/schemas/Activation"
+            },
+            "type": "array"
+          },
+          "active": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/VersionMeta"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "active",
+          "versions",
+          "activations"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "apiKey": {
+        "in": "header",
+        "name": "x-api-key",
+        "type": "apiKey"
+      },
+      "bearer": {
+        "description": "API key or OIDC access token",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Adaptive retrieval and evidence intelligence.",
+    "title": "RAG2 API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/healthz": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "alive"
+          }
+        },
+        "summary": "Liveness",
+        "tags": [
+          "operations"
+        ]
+      }
+    },
+    "/mcp": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "JSON-RPC response"
+          },
+          "202": {
+            "description": "notification accepted"
+          }
+        },
+        "summary": "Model Context Protocol (JSON-RPC 2.0): tools search, get_document_chunks, list_documents",
+        "tags": [
+          "integration"
+        ]
+      }
+    },
+    "/metrics": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "text exposition"
+          }
+        },
+        "summary": "Prometheus metrics",
+        "tags": [
+          "operations"
+        ]
+      }
+    },
+    "/readyz": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "ready"
+          },
+          "503": {
+            "description": "starting"
+          }
+        },
+        "summary": "Readiness",
+        "tags": [
+          "operations"
+        ]
+      }
+    },
+    "/v1/admin/audit": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Audit trail (query: after, limit)",
+        "tags": [
+          "operations"
+        ]
+      }
+    },
+    "/v1/admin/components": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComponentHealth"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Loaded embedders and decision models",
+        "tags": [
+          "operations"
+        ]
+      }
+    },
+    "/v1/admin/config": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveConfig"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Active configuration",
+        "tags": [
+          "config"
+        ]
+      }
+    },
+    "/v1/admin/config/preview": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileSubmission"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preview"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Validate and diff a profile without storing it",
+        "tags": [
+          "config"
+        ]
+      }
+    },
+    "/v1/admin/config/rollback": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Re-activate the previous version",
+        "tags": [
+          "config"
+        ]
+      }
+    },
+    "/v1/admin/config/schema": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "JSON Schema of profiles",
+        "tags": [
+          "config"
+        ]
+      }
+    },
+    "/v1/admin/config/versions": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Versions"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Version history and activations",
+        "tags": [
+          "config"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileSubmission"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Store a new version (optionally activate)",
+        "tags": [
+          "config"
+        ]
+      }
+    },
+    "/v1/admin/config/versions/{version}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "One stored version",
+        "tags": [
+          "config"
+        ]
+      }
+    },
+    "/v1/admin/config/versions/{version}/activate": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Activate a version atomically",
+        "tags": [
+          "config"
+        ]
+      }
+    },
+    "/v1/admin/connectors": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectorView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Connectors and their last sync",
+        "tags": [
+          "connectors"
+        ]
+      }
+    },
+    "/v1/admin/connectors/{name}/run": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncReport"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Sync a connector now",
+        "tags": [
+          "connectors"
+        ]
+      }
+    },
+    "/v1/admin/connectors/{name}/test": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Test a connector's connection and credentials",
+        "tags": [
+          "connectors"
+        ]
+      }
+    },
+    "/v1/admin/tenants": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "List tenants",
+        "tags": [
+          "tenants"
+        ]
+      }
+    },
+    "/v1/admin/tenants/{tenant}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Delete a tenant and all its data (requires ?confirm=<tenant>)",
+        "tags": [
+          "tenants"
+        ]
+      }
+    },
+    "/v1/admin/tenants/{tenant}/reindex": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Re-embed and rebuild a tenant's indexes",
+        "tags": [
+          "tenants"
+        ]
+      }
+    },
+    "/v1/tenants/{tenant}/documents": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentRecord"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "List documents (query: after, limit)",
+        "tags": [
+          "documents"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestReport"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Ingest documents (incremental: unchanged documents are skipped)",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/tenants/{tenant}/documents/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Delete a document and its chunks from every index",
+        "tags": [
+          "documents"
+        ]
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentRecord"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Get a document record (percent-encode the id)",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/tenants/{tenant}/documents/{id}/chunks": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChunkView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "A document's chunks",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/tenants/{tenant}/query": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Adaptive hybrid retrieval",
+        "tags": [
+          "retrieval"
+        ]
+      }
+    },
+    "/v1/tenants/{tenant}/stats": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantStats"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Rate limited (Retry-After)"
+          },
+          "503": {
+            "description": "Overloaded or unavailable (Retry-After)"
+          }
+        },
+        "summary": "Tenant index statistics",
+        "tags": [
+          "documents"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    },
+    {
+      "apiKey": []
+    }
+  ],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ]
+}

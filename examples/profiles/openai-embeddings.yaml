@@ -1,0 +1,20 @@
+# Dense retrieval through any OpenAI-compatible embeddings API (OpenAI, vLLM, Ollama, TEI,
+# llama.cpp). The key is referenced, never inlined.
+api_version: rag2/v1
+metadata:
+  name: hosted-embeddings
+server:
+  listen: 127.0.0.1:8080
+embedders:
+  openai:
+    kind: http
+    endpoint: https://api.openai.com/v1
+    model: text-embedding-3-small
+    dim: 1536
+    api_key: env:OPENAI_API_KEY
+    batch: 64
+pipelines:
+  default:
+    retrievers:
+      - { kind: dense, embedder: openai, top_k: 50, weight: 1.0 }
+      - { kind: lexical, top_k: 50, weight: 0.7 }

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}
+  labels: { app.kubernetes.io/name: rag2, app.kubernetes.io/instance: {{ .Release.Name }} }
+spec:
+  serviceName: {{ .Release.Name }}
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: rag2, app.kubernetes.io/instance: {{ .Release.Name }} }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: rag2, app.kubernetes.io/instance: {{ .Release.Name }} }
+      annotations:
+        checksum/profile: {{ .Values.profile | sha256sum }}
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 65532, fsGroup: 65532, seccompProfile: { type: RuntimeDefault } }
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: rag2
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["serve", "--file", "/etc/rag2/rag2.yaml", "--watch"]
+          envFrom: [{ secretRef: { name: {{ .Values.existingSecret }} } }]
+          env:
+            - { name: RAG2_CONFIG_DIR, value: /var/lib/rag2/config }
+            - { name: RAG2_LOG_FORMAT, value: json }
+          ports: [{ name: http, containerPort: 8080 }]
+          readinessProbe: { httpGet: { path: /readyz, port: http }, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /healthz, port: http }, periodSeconds: 10, failureThreshold: 6 }
+          resources: {{ toYaml .Values.resources | nindent 12 }}
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/rag2 }
+            - { name: profile, mountPath: /etc/rag2, readOnly: true }
+      volumes:
+        - name: profile
+          configMap: { name: {{ .Release.Name }}-profile }
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- if .Values.persistence.storageClass }}
+        storageClassName: {{ .Values.persistence.storageClass }}
+        {{- end }}
+        resources: { requests: { storage: {{ .Values.persistence.size }} } }

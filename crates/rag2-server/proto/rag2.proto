@@ -1,0 +1,101 @@
+// RAG2 gRPC API v1. Same semantics, limits, authentication (metadata `authorization: Bearer ...`)
+// and tenant scoping as the REST API.
+syntax = "proto3";
+package rag2.v1;
+
+service Rag2 {
+  rpc Query(QueryRequest) returns (QueryResponse);
+  rpc Ingest(IngestRequest) returns (IngestResponse);
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
+}
+
+message QueryRequest {
+  string tenant = 1;
+  string query = 2;
+  optional uint32 top_k = 3;
+  optional string pipeline = 4;
+  // Metadata filters as a JSON object, e.g. {"dept": ["ops", "safety"]}.
+  string filters_json = 5;
+  optional uint32 hops = 6;
+  bool include_context = 7;
+}
+
+message Signal {
+  string retriever = 1;
+  uint32 rank = 2;
+  float score = 3;
+  uint32 hop = 4;
+}
+
+message Evidence {
+  uint64 chunk_id = 1;
+  string text = 2;
+  float score = 3;
+  repeated Signal signals = 4;
+  string doc_id = 5;
+  uint64 doc_version = 6;
+  uint32 chunk_ordinal = 7;
+  uint32 start = 8;
+  uint32 end = 9;
+  optional string source = 10;
+  optional string title = 11;
+}
+
+message Contradiction {
+  uint64 a = 1;
+  uint64 b = 2;
+  string detector = 3;
+  string reason = 4;
+  float confidence = 5;
+}
+
+message QueryResponse {
+  repeated Evidence evidence = 1;
+  float confidence = 2;
+  optional string abstained_reason = 3;
+  optional string abstained_detail = 4;
+  repeated Contradiction contradictions = 5;
+  optional string context = 6;
+  string pipeline = 7;
+  repeated string route = 8;
+  string route_reason = 9;
+  uint64 total_us = 10;
+  bool cached = 11;
+  repeated string warnings = 12;
+  uint64 config_version = 13;
+}
+
+message Document {
+  string id = 1;
+  optional string title = 2;
+  string text = 3;
+  optional string source = 4;
+  // Metadata as a JSON object.
+  string metadata_json = 5;
+}
+
+message IngestRequest {
+  string tenant = 1;
+  repeated Document documents = 2;
+}
+
+message IngestedDocument {
+  string id = 1;
+  string status = 2;
+  uint32 chunks = 3;
+  uint64 version = 4;
+}
+
+message IngestResponse {
+  repeated IngestedDocument documents = 1;
+  uint64 generation = 2;
+}
+
+message DeleteDocumentRequest {
+  string tenant = 1;
+  string id = 2;
+}
+
+message DeleteDocumentResponse {
+  bool deleted = 1;
+}

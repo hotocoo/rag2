@@ -1,0 +1,21 @@
+[package]
+name = "rag2-vector"
+description = "RAG2 vector indexes: exact flat scan and HNSW, behind rag2_core::interfaces::VectorIndex"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+rag2-core.workspace = true
+parking_lot.workspace = true
+rayon.workspace = true
+hnsw_rs.workspace = true
+
+[dev-dependencies]
+rand.workspace = true
+proptest.workspace = true
+
+[lints]
+workspace = true

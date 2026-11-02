@@ -1,0 +1,33 @@
+# Laya as a decision model: it picks the retrieval route (a `choice` question) and gates
+# relevance (`yesno`). Laya answers typed questions with calibrated confidence; RAG2 falls back to
+# the configured route when it is unavailable or unsure.
+api_version: rag2/v1
+metadata:
+  name: laya
+server:
+  listen: 127.0.0.1:8080
+decision_models:
+  laya:
+    kind: laya_http                 # or: kind: laya_local, checkpoint_dir: /models/laya
+    endpoint: http://127.0.0.1:8091
+    serve_id: laya
+    timeout_ms: 2000
+pipelines:
+  default:
+    retrievers:
+      - { kind: dense, embedder: default }
+      - { kind: lexical }
+    routing:
+      mode: decision
+      model: laya
+      instructions: Which retrieval strategy best answers this search query?
+      routes:
+        keyword: { description: "exact names, codes or quoted phrases", retrievers: [lexical] }
+        semantic: { description: "questions about meaning or concepts", retrievers: [dense] }
+        both: { description: "mixed or unclear queries", retrievers: [dense, lexical] }
+      min_confidence: 0.9
+      fallback: [dense, lexical]
+    relevance_gate:
+      model: laya
+      instructions: Does the passage contain information that answers the query?
+      min_confidence: 0.9

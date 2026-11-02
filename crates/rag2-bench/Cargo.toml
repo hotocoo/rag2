@@ -1,0 +1,30 @@
+[package]
+name = "rag2-bench"
+description = "Reproducible RAG2 benchmarks: vector index comparison, retrieval latency percentiles, recall@k"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+metal = ["rag2-embed/metal"]
+cuda = ["rag2-embed/cuda"]
+
+[dependencies]
+rag2-core.workspace = true
+rag2-vector.workspace = true
+rag2-engine.workspace = true
+rag2-config.workspace = true
+rag2-embed.workspace = true
+embedvec.workspace = true
+clap.workspace = true
+rand.workspace = true
+rayon.workspace = true
+hdrhistogram.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+
+[lints]
+workspace = true

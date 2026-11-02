@@ -1,0 +1,30 @@
+# Local development: loopback only (so no authentication), hash embeddings (no model download),
+# hybrid retrieval with rule-based routing, one extra hop, graph expansion.
+api_version: rag2/v1
+metadata:
+  name: local
+  description: Laptop profile
+server:
+  listen: 127.0.0.1:8080
+storage:
+  data_dir: ./data
+indexes:
+  lexical:
+    tokenizer: en_stem
+    commit_interval_ms: 0        # searchable as soon as ingest returns
+pipelines:
+  default:
+    retrievers:
+      - { kind: dense, embedder: default, top_k: 50 }
+      - { kind: lexical, top_k: 50 }
+      - { kind: graph, top_k: 10, weight: 0.5 }
+    routing:
+      mode: rules
+      rules:
+        - when: has_identifier          # error codes, part numbers: exact terms win
+          retrievers: [lexical, graph]
+        - when: { max_words: 2 }
+          retrievers: [lexical, dense]
+      fallback: [dense, lexical, graph]
+    multi_hop: { extra_hops: 1, max_hops: 2 }
+    abstention: { min_confidence: 0.3 }

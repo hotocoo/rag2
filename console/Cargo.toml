@@ -1,0 +1,28 @@
+[package]
+name = "rag2-console"
+description = "RAG2 administration console (Leptos, client-side rendered WebAssembly)"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+license = "Apache-2.0"
+publish = false
+
+# Built separately from the server workspace: `trunk build --release` (see README.md).
+[workspace]
+
+[dependencies]
+leptos = { version = "0.8.23", features = ["csr"] }
+gloo-net = { version = "0.7.0", default-features = false, features = ["http", "json"] }
+gloo-storage = "0.4.0"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+serde_norway = "0.9.42"
+wasm-bindgen = "0.2.130"
+web-sys = { version = "0.3.107", features = ["Window", "Location"] }
+console_error_panic_hook = "0.1.7"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"

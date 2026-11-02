@@ -1,0 +1,39 @@
+image:
+  repository: rag2
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Secrets are never put in values: reference an existing Secret holding
+# RAG2_ADMIN_KEY and RAG2_ENCRYPTION_KEY (and any env:NAME the profile references).
+existingSecret: rag2-secrets
+
+# The RAG2 profile, mounted at /etc/rag2/rag2.yaml and hot-reloaded on change.
+profile: |
+  api_version: rag2/v1
+  metadata:
+    name: main
+  server:
+    listen: 0.0.0.0:8080
+  storage:
+    data_dir: /var/lib/rag2/data
+    encryption_key: env:RAG2_ENCRYPTION_KEY
+  security:
+    auth:
+      mode: api_keys
+      keys:
+        - id: admin
+          secret: env:RAG2_ADMIN_KEY
+          roles: [admin]
+          tenants: ["*"]
+
+persistence:
+  size: 20Gi
+  storageClass: ""
+
+resources:
+  requests: { cpu: "1", memory: 2Gi }
+  limits: { memory: 8Gi }
+
+service:
+  type: ClusterIP
+  port: 8080

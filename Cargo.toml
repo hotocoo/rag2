@@ -1,0 +1,105 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+# The admin console targets wasm32 and builds with trunk (console/README.md).
+exclude = ["console"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+license = "Apache-2.0"
+repository = "https://github.com/acotech/rag2"
+publish = false
+
+# Every version here is the latest stable release on crates.io at the time it was added
+# (policy: docs/DEPENDENCIES.md). Pre-releases are never used.
+[workspace.dependencies]
+rag2-core = { path = "crates/rag2-core" }
+rag2-config = { path = "crates/rag2-config" }
+rag2-storage = { path = "crates/rag2-storage" }
+rag2-lexical = { path = "crates/rag2-lexical" }
+rag2-vector = { path = "crates/rag2-vector" }
+rag2-engine = { path = "crates/rag2-engine" }
+rag2-server = { path = "crates/rag2-server" }
+rag2-client = { path = "crates/rag2-client" }
+rag2-laya = { path = "crates/rag2-laya" }
+rag2-embed = { path = "crates/rag2-embed" }
+rag2-plugins = { path = "crates/rag2-plugins" }
+rag2-connectors = { path = "crates/rag2-connectors" }
+
+serde = { version = "1.0.229", features = ["derive", "rc"] }
+serde_json = "1.0.154"
+serde_norway = "0.9.42"
+schemars = "1.2.3"
+arc-swap = "1.9.3"
+thiserror = "2.0.21"
+anyhow = "1.0.104"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+clap = { version = "4.6.7", features = ["derive", "env"] }
+uuid = { version = "1.29.0", features = ["v7", "serde"] }
+xxhash-rust = { version = "0.8.19", features = ["xxh3"] }
+blake3 = "1.8.7"
+parking_lot = "0.13.0"
+rand = "0.10.3"
+rayon = "1.12.0"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "sync", "signal", "time", "fs", "net", "io-std", "io-util"] }
+axum = "0.8.9"
+tower = { version = "0.5.3", features = ["limit", "timeout", "load-shed", "util"] }
+tower-http = { version = "0.7.1", features = ["trace", "cors", "limit", "request-id", "fs", "compression-gzip", "set-header"] }
+tantivy = "0.27.0"
+fjall = "3.1.13"
+redb = "4.4.0"
+moka = { version = "0.12.16", features = ["sync"] }
+notify = "8.2.1"
+hdrhistogram = "7.6.0"
+simsimd = "6.5.16"
+embedvec = { version = "0.10.0", default-features = false, features = ["simd"] }
+hnsw_rs = "0.3.5"
+candle-core = "0.11.1"
+candle-nn = "0.11.1"
+tokenizers = { version = "0.23.2", default-features = false, features = ["onig"] }
+tempfile = "3.27.0"
+proptest = "1.12.0"
+criterion = "0.8.2"
+regex = "1.13.1"
+chacha20poly1305 = { version = "0.11.0", features = ["getrandom", "zeroize"] }
+base64 = "0.23.1"
+zeroize = "1.9.1"
+subtle = "2.6.1"
+jsonwebtoken = { version = "11.1.0", default-features = false, features = ["aws_lc_rs"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "rustls", "http2"] }
+governor = "0.10.4"
+metrics = "0.24.6"
+metrics-exporter-prometheus = { version = "0.18.3", default-features = false }
+axum-server = { version = "0.8.0", features = ["tls-rustls"] }
+rustls = "0.23.46"
+rustls-pki-types = { version = "1.15.1", features = ["std"] }
+http = "1.5.0"
+getrandom = "0.4.3"
+hmac = "0.13.0"
+tonic = { version = "0.14.9", features = ["tls-aws-lc"] }
+tonic-prost = "0.14.9"
+wasmtime = { version = "50.0.1", default-features = false, features = ["runtime", "cranelift", "std", "wat", "parallel-compilation"] }
+tonic-prost-build = "0.14.9"
+prost = "0.14.4"
+sha2 = "0.11.1"
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+unused_must_use = "deny"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
+dbg_macro = "deny"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+debug = "line-tables-only"
+
+[profile.bench]
+inherits = "release"
+panic = "unwind"

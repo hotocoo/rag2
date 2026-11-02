@@ -1,0 +1,51 @@
+# Production: OIDC SSO plus a CI API key, TLS with client certificates, encryption at rest,
+# per-tenant quotas, environment overlays.
+api_version: rag2/v1
+metadata:
+  name: main
+  description: Production profile
+  labels: { owner: platform-team }
+server:
+  listen: 0.0.0.0:8443
+  tls:
+    cert_path: /etc/rag2/tls/server.crt
+    key_path: /etc/rag2/tls/server.key
+    client_ca_path: /etc/rag2/tls/clients-ca.crt
+  max_concurrent_requests: 2048
+  request_timeout_ms: 5000
+storage:
+  data_dir: /var/lib/rag2/data
+  cache_mb: 1024
+  encryption_key: file:/run/secrets/rag2-encryption-key
+security:
+  auth:
+    mode: oidc
+    issuer: https://login.example.com/realms/corp
+    audience: rag2
+    jwks_url: https://login.example.com/realms/corp/protocol/openid-connect/certs
+    roles_claim: rag2_roles
+    tenants_claim: rag2_tenants
+    api_keys:
+      - id: ci-ingest
+        secret: env:RAG2_CI_KEY
+        roles: [writer]
+        tenants: [docs, support]
+  roles:
+    reader: { permissions: [query, read_documents] }
+    writer: { permissions: [query, read_documents, ingest, delete_documents] }
+    admin:
+      permissions: [query, ingest, delete_documents, read_documents, manage_config, manage_tenants, read_audit, read_metrics, manage_plugins]
+    sre: { permissions: [read_metrics, read_audit] }
+  audit: { enabled: true, include_queries: true }
+tenant_defaults:
+  requests_per_second: 100
+  burst: 200
+  max_documents: 1000000
+tenants:
+  support:
+    requests_per_second: 500
+    burst: 1000
+environments:
+  staging:
+    server: { max_concurrent_requests: 256 }
+    security: { audit: { include_queries: false } }

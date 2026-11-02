@@ -1,0 +1,22 @@
+# Local sentence embeddings with a ModernBERT checkpoint on candle, e.g.
+#   hf download nomic-ai/modernbert-embed-base config.json model.safetensors tokenizer.json \
+#     --local-dir models/modernbert-embed-base
+api_version: rag2/v1
+metadata:
+  name: local-models
+server:
+  listen: 127.0.0.1:8080
+embedders:
+  modernbert:
+    kind: candle
+    model_dir: models/modernbert-embed-base
+    device: cpu                     # metal / cuda with the matching build feature
+    pooling: mean
+    query_prefix: "search_query: "
+    document_prefix: "search_document: "
+    max_tokens: 512
+pipelines:
+  default:
+    retrievers:
+      - { kind: dense, embedder: modernbert }
+      - { kind: lexical }

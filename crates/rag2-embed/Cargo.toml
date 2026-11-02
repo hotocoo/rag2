@@ -1,0 +1,33 @@
+[package]
+name = "rag2-embed"
+description = "RAG2 embedders: OpenAI-compatible HTTP endpoints and local ModernBERT-family models on candle"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+default = []
+metal = ["rag2-laya/metal"]
+cuda = ["rag2-laya/cuda"]
+
+[dependencies]
+rag2-core.workspace = true
+rag2-config.workspace = true
+rag2-engine.workspace = true
+rag2-laya.workspace = true
+candle-core.workspace = true
+candle-nn.workspace = true
+tokenizers.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+reqwest = { workspace = true, features = ["blocking"] }
+tracing.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+axum.workspace = true
+
+[lints]
+workspace = true

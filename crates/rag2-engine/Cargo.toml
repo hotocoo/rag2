@@ -1,0 +1,31 @@
+[package]
+name = "rag2-engine"
+description = "RAG2 adaptive retrieval engine: ingest, routing, hybrid retrieval, fusion, evidence analysis, context assembly"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+rag2-core.workspace = true
+rag2-config.workspace = true
+rag2-storage.workspace = true
+rag2-lexical.workspace = true
+rag2-vector.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+parking_lot.workspace = true
+rayon.workspace = true
+regex.workspace = true
+moka.workspace = true
+xxhash-rust.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+proptest.workspace = true
+
+[lints]
+workspace = true

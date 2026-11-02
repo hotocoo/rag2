@@ -1,0 +1,59 @@
+[package]
+name = "rag2-server"
+description = "RAG2 HTTP service: REST API, OpenAPI, authentication, authorization, rate limits, audit, metrics"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+default = ["grpc"]
+# gRPC API on server.grpc_listen (needs protoc at build time).
+grpc = ["dep:tonic", "dep:tonic-prost", "dep:prost", "dep:tonic-prost-build"]
+
+[build-dependencies]
+tonic-prost-build = { workspace = true, optional = true }
+
+[dependencies]
+rag2-core.workspace = true
+rag2-config.workspace = true
+rag2-engine.workspace = true
+rag2-storage.workspace = true
+rag2-connectors.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+arc-swap.workspace = true
+parking_lot.workspace = true
+tokio.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+http.workspace = true
+tracing.workspace = true
+blake3.workspace = true
+subtle.workspace = true
+jsonwebtoken.workspace = true
+reqwest.workspace = true
+governor.workspace = true
+metrics.workspace = true
+metrics-exporter-prometheus.workspace = true
+axum-server.workspace = true
+rustls.workspace = true
+rustls-pki-types.workspace = true
+uuid.workspace = true
+thiserror.workspace = true
+hmac.workspace = true
+tonic = { workspace = true, optional = true }
+tonic-prost = { workspace = true, optional = true }
+prost = { workspace = true, optional = true }
+sha2.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+jsonwebtoken = { workspace = true, features = ["use_pem"] }
+tower = { workspace = true, features = ["util"] }
+
+[lints]
+workspace = true

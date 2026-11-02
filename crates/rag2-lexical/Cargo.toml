@@ -1,0 +1,20 @@
+[package]
+name = "rag2-lexical"
+description = "RAG2 BM25 full-text retrieval over Tantivy, one index per tenant"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+rag2-core.workspace = true
+tantivy.workspace = true
+parking_lot.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

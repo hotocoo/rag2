@@ -1,0 +1,23 @@
+# Single node with persistent storage. TLS is expected to terminate at your ingress, or set
+# server.tls in the profile.
+services:
+  rag2:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: rag2:latest
+    ports: ["8080:8080"]
+    env_file: ../rag2.env
+    volumes:
+      - rag2-data:/var/lib/rag2
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/rag2", "status", "--url", "http://127.0.0.1:8080"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    restart: unless-stopped
+volumes:
+  rag2-data:

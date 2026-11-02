@@ -1,0 +1,9 @@
+target/
+data/
+*.tmp
+.DS_Store
+models/
+bench-data/
+console/dist/
+examples/plugins/*/target/
+*.log

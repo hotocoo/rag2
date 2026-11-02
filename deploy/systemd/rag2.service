@@ -1,0 +1,38 @@
+# Install: cp rag2 /usr/local/bin/ && cp rag2.service /etc/systemd/system/
+#          install -d -o rag2 -g rag2 /var/lib/rag2 /etc/rag2 && systemctl enable --now rag2
+[Unit]
+Description=RAG2 adaptive retrieval service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=rag2
+Group=rag2
+EnvironmentFile=/etc/rag2/rag2.env
+Environment=RAG2_CONFIG_DIR=/var/lib/rag2/config RAG2_LOG_FORMAT=json
+ExecStart=/usr/local/bin/rag2 serve --file /etc/rag2/rag2.yaml --watch
+Restart=on-failure
+# Graceful drain: rag2 stops accepting, finishes in-flight requests, flushes indexes.
+KillSignal=SIGTERM
+TimeoutStopSec=30
+LimitNOFILE=65536
+# Hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+# Remove if Wasm plugins are enabled: the plugin JIT needs writable+executable pages.
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+ReadWritePaths=/var/lib/rag2
+ReadOnlyPaths=/etc/rag2
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+# Container profile: listens on all interfaces, so authentication is mandatory.
+# Secrets come from the environment (see rag2 init / your secret manager).
+api_version: rag2/v1
+metadata:
+  name: main
+  description: Container default profile
+server:
+  listen: 0.0.0.0:8080
+storage:
+  data_dir: /var/lib/rag2/data
+  encryption_key: env:RAG2_ENCRYPTION_KEY
+security:
+  auth:
+    mode: api_keys
+    keys:
+      - id: admin
+        secret: env:RAG2_ADMIN_KEY
+        roles: [admin]
+        tenants: ["*"]
