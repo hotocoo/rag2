@@ -82,15 +82,23 @@ See [docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/CONFIGURATION.md](docs/CONFI
 
 - REST + OpenAPI: `/v1/...`
 - Rust SDK: `rag2-client`
-- Embedded library: `rag2-engine` (`Engine::open`, `ingest`, `query`), no server needed
+- Embedded library: `rag2` (`rag2::open`, `ingest`, `query`; `rag2::router` to mount the API), no server needed
 - CLI: `rag2`
-- Deployment: `deploy/Dockerfile`, `deploy/docker-compose.yml`, `deploy/helm/rag2`,
-  `deploy/systemd/rag2.service`
+- Deployment: `deploy/Dockerfile`, `deploy/docker-compose.yml` (+ `docker-compose.d1.yml` for d1),
+  `deploy/helm/rag2`, `deploy/systemd/rag2.service`
 
 ## Measured performance
 
 Numbers come only from the reproducible harness in `crates/rag2-bench`; see
 [docs/benchmarks](docs/benchmarks). No figure here is a target or an estimate.
+
+- Decision model under extreme load ([decision-d1.md](docs/benchmarks/decision-d1.md)): Liquid AI
+  d1-2B Q8_0 on llama.cpp, M4 Max. 0.667 three-way accuracy on 5,540 real NLI / claim items
+  (ANLI R3 0.514, XNLI en 0.845, SciFact 0.797; ECE 0.033); as RAG2's reranker nDCG@5 0.434 to
+  0.530 on SciFact; gated query p99 4.0 s at 32 concurrent users with the stage deadline
+  (41.4 s without).
+- Retrieval quality and latency on SciFact: [retrieval.md](docs/benchmarks/retrieval.md).
+- Vector indexes: [vector-index.md](docs/benchmarks/vector-index.md).
 
 ## Workspace
 

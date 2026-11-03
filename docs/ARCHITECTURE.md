@@ -112,7 +112,11 @@ gate relevance and to confirm contradictions; every answer is validated (offered
 confidence in [0, 1], one answer per question) and an unavailable or unsure model falls back.
 
 - `system_one`: a System One server such as Liquid AI d1 on llama.cpp (`POST /v1/systemone`).
-  Questions over several states (one per passage or passage pair) run concurrently up to
-  `concurrency`, which should match the server's `-np` slots.
+  At most `concurrency` calls are in flight per model across all queries (default 1: llama.cpp
+  serves d1 one call at a time and starves queued requests); the rest wait in a FIFO queue in
+  RAG2. A stage that asks about several passages shares one deadline (`timeout_ms`, queueing
+  included); unanswered items fail open. Measured in docs/benchmarks/decision-d1.md.
+- Gate `mode`: `per_item` (one call per passage, default) or `joint` (all passages in one state,
+  one question each; only faster on servers that read a state once per call).
 - `laya_http` / `laya_local`: Laya checkpoints over HTTP or in-process on candle. The in-process
   runtime's numerical behavior is untested without a checkpoint (`RAG2_LAYA_CHECKPOINT`).

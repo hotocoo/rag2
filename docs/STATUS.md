@@ -64,7 +64,11 @@ Resume point for any new working session. Update the checkboxes as work lands.
 
 ## Known gaps (unmeasured or unbuilt, not hidden)
 
-- Coverage: see "Coverage" below (measured with cargo-llvm-cov, live model tests included).
+- Coverage (cargo llvm-cov, 2026-11-03, 171 tests incl. live d1 and ModernBERT tests via
+  `RAG2_SYSTEMONE` / `RAG2_EMBED_MODEL_DIR`): 84.46% lines, 82.43% regions for the shipped crates;
+  75.77% lines including `rag2-bench` (exercised by benchmark runs, not unit tests). Lowest:
+  `rag2-laya/src/model.rs` 0% (needs a Laya checkpoint), `rag2-server/src/lib.rs` 50% (TLS and
+  gRPC serving paths).
 - The console has no automated tests; verified in Chrome (login, pipeline edit -> preview ->
   apply, playground, connectors build) and served with d1 on 2026-11-03.
 - Laya numerical parity on candle 0.11 unmeasured (no checkpoint on this machine).
