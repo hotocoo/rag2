@@ -415,6 +415,7 @@ fn point(
         })
     });
     let started = Instant::now();
+    let eval = &eval[..a.e2e_queries.min(eval.len())];
     let res = fan_out(threads, eval, |(q, _)| {
         let s = Instant::now();
         let r = engine.query(t, request(q, pipeline, a.k));

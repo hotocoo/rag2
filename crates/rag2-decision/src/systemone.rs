@@ -313,7 +313,7 @@ mod tests {
         assert!(parse_answers(&bad, &q).is_err(), "nan confidence");
     }
 
-    /// Live d1 server, e.g. `llama-server -m d1-2B-Q8_0.gguf --alias d1-2B -np 8`, then
+    /// Live d1 server, e.g. `llama-server -m d1-2B-Q8_0.gguf --alias d1-2B -np 1`, then
     /// `RAG2_SYSTEMONE=http://127.0.0.1:8081 cargo test -p rag2-decision systemone -- --ignored`.
     fn live() -> Option<SystemOneHttp> {
         let ep = std::env::var("RAG2_SYSTEMONE").ok()?;

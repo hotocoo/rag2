@@ -1,0 +1,30 @@
+# RAG2 with Liquid AI d1-2B as its decision model (routing, relevance gate, contradiction check):
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.d1.yml up
+# The first start downloads the Q8_0 GGUF (1.8 GB) into the d1-models volume. llama.cpp serves
+# d1 one request at a time, so `-np 1` and RAG2's default `concurrency: 1` (FIFO queue in RAG2).
+# CPU image here; use ghcr.io/ggml-org/llama.cpp:server-cuda-b11960
+# (and a GPU reservation) on NVIDIA hosts.
+services:
+  d1:
+    image: ghcr.io/ggml-org/llama.cpp:server-b11960
+    command: >-
+      -hf LiquidAI/d1-2B-GGUF:Q8_0 --alias d1-2B --host 0.0.0.0 --port 8081
+      -b 16384 -ub 16384 -np 1 -c 16384
+    environment:
+      LLAMA_CACHE: /models
+    volumes:
+      - d1-models:/models
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8081/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 60
+    restart: unless-stopped
+  rag2:
+    depends_on:
+      d1:
+        condition: service_healthy
+    volumes:
+      - ./profile.container.d1.yaml:/etc/rag2/rag2.yaml:ro
+volumes:
+  d1-models:

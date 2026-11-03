@@ -1,5 +1,5 @@
 # Liquid AI d1 as the decision model, served by llama.cpp (v0.8.0 / b11960 or newer):
-#   llama-server -hf LiquidAI/d1-2B-GGUF:Q8_0 --alias d1-2B -b 8192 -ub 8192 -np 8 --port 8081
+#   llama-server -hf LiquidAI/d1-2B-GGUF:Q8_0 --alias d1-2B -b 16384 -ub 16384 -np 1 --port 8081
 # d1 picks the retrieval route (`choice`), gates relevance and confirms contradictions (`noul`).
 # RAG2 falls back to the configured route, or keeps the passage, when d1 is unavailable or unsure.
 api_version: rag2/v1
@@ -13,7 +13,7 @@ decision_models:
     endpoint: http://127.0.0.1:8081
     serve_id: d1-2B
     timeout_ms: 10000
-    concurrency: 8                  # match llama-server -np
+    concurrency: 1                  # in flight across all queries; RAG2 queues the rest FIFO
 pipelines:
   default:
     retrievers:

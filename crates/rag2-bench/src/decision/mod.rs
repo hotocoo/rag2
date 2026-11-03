@@ -98,6 +98,9 @@ pub struct DecisionArgs {
     /// E2E: concurrent query threads to sweep.
     #[arg(long, value_delimiter = ',', default_value = "1,4,16,32")]
     e2e_threads: Vec<usize>,
+    /// E2E: SciFact test queries per point (the first N).
+    #[arg(long, default_value_t = 100)]
+    e2e_queries: usize,
     /// E2E: also re-ingest the corpus while querying.
     #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     e2e_ingest: bool,

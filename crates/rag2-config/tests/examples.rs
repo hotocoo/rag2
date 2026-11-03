@@ -41,13 +41,20 @@ fn example_profiles_are_valid() {
 }
 
 #[test]
-fn the_container_profile_is_valid() {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../deploy/profile.container.yaml");
-    let p = resolve(
-        &parse_profile_value(&std::fs::read_to_string(path).expect("read")).expect("parse"),
-        None,
-    )
-    .expect("resolve");
-    assert!(validate(&p).iter().all(|i| i.severity != Severity::Error));
+fn the_container_profiles_are_valid() {
+    for name in ["profile.container.yaml", "profile.container.d1.yaml"] {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../deploy")
+            .join(name);
+        let p = resolve(
+            &parse_profile_value(&std::fs::read_to_string(&path).expect("read")).expect("parse"),
+            None,
+        )
+        .expect("resolve");
+        let errors: Vec<_> = validate(&p)
+            .into_iter()
+            .filter(|i| i.severity == Severity::Error)
+            .collect();
+        assert!(errors.is_empty(), "{name}: {errors:?}");
+    }
 }

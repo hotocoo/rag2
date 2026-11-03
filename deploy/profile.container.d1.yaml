@@ -1,0 +1,51 @@
+# Container profile with Liquid AI d1 (the `d1` service of docker-compose.d1.yml) as decision
+# model: it picks the retrieval route, gates relevance and confirms contradictions. Unavailable,
+# saturated or unsure means fall back (route) or keep (passage, contradiction flag).
+api_version: rag2/v1
+metadata:
+  name: main
+  description: Container profile with d1 decisions
+server:
+  listen: 0.0.0.0:8080
+storage:
+  data_dir: /var/lib/rag2/data
+  encryption_key: env:RAG2_ENCRYPTION_KEY
+security:
+  auth:
+    mode: api_keys
+    keys:
+      - id: admin
+        secret: env:RAG2_ADMIN_KEY
+        roles: [admin]
+        tenants: ["*"]
+decision_models:
+  d1:
+    kind: system_one
+    endpoint: http://d1:8081
+    serve_id: d1-2B
+    timeout_ms: 10000
+    concurrency: 1
+pipelines:
+  default:
+    retrievers:
+      - { kind: dense, embedder: default }
+      - { kind: lexical }
+    routing:
+      mode: decision
+      model: d1
+      instructions: Which retrieval strategy best answers this search query?
+      routes:
+        keyword: { description: "exact names, codes or quoted phrases", retrievers: [lexical] }
+        semantic: { description: "questions about meaning or concepts", retrievers: [dense] }
+        both: { description: "mixed or unclear queries", retrievers: [dense, lexical] }
+      min_confidence: 0.6
+      fallback: [dense, lexical]
+    relevance_gate:
+      model: d1
+      instructions: Does the passage contain information that answers the query?
+      min_confidence: 0.7
+    contradiction:
+      decision:
+        model: d1
+        instructions: Do the two passages make claims that contradict each other?
+        min_confidence: 0.7

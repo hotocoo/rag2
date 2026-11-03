@@ -86,8 +86,11 @@ pub const DOCUMENT_CACHE_ENTRIES: u64 = 50_000;
 
 // Decision model transport
 pub const DECISION_HTTP_TIMEOUT_MS: u64 = 5_000;
-/// Decision requests in flight per stage; matches a llama-server started with `-np 4`.
-pub const DECISION_CONCURRENCY: usize = 4;
+/// Decision requests in flight per model, across all queries. llama.cpp 0.8.0 runs d1 calls one
+/// at a time, so more in flight adds no throughput and queues inside the server, where requests
+/// starve. Measured, 346-token states: 1 in flight p99 0.38 s at 7.6 calls/s; 2: 0.70 s at
+/// 5.1/s; 8: 49 s (docs/benchmarks/decision-d1.md). RAG2 queues the rest in FIFO order.
+pub const DECISION_CONCURRENCY: usize = 1;
 
 // Tenancy
 pub const TENANT_REQUESTS_PER_SECOND: u32 = 200;
