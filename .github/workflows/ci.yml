@@ -26,5 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true # console/vendor/hesperides: the design system
+          # hotocoo/hesperides-design-system is private: GITHUB_TOKEN cannot read another private
+          # repo, so a read-only token for it goes in this secret.
+          token: ${{ secrets.HESPERIDES_READ_TOKEN || github.token }}
       - run: rustup target add wasm32-unknown-unknown && cargo install trunk --locked
       - run: cd console && trunk build --release

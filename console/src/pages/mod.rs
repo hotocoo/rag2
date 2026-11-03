@@ -20,6 +20,8 @@ pub use playground::Playground;
 pub use tenants::Tenants;
 
 use crate::api::Session;
+use crate::copy::{change as t, common};
+use crate::ui::{Alert, Button, Card, Field, InputFrame, Table, TextInput, Tone, Variant};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde_json::{Value, json};
@@ -35,25 +37,43 @@ pub fn load(s: &Session, path: &str, into: RwSignal<Option<Value>>, err: RwSigna
     });
 }
 
+/// A server error, as a danger alert.
 #[component]
 pub fn ErrorLine(err: RwSignal<Option<String>>) -> impl IntoView {
-    move || err.get().map(|e| view! { <p class="err" role="alert">{e}</p> })
+    move || {
+        err.get()
+            .map(|e| view! { <Alert tone=Tone::Danger title=common::ERROR_TITLE>{e}</Alert> })
+    }
+}
+
+/// A string field of a JSON value, or empty.
+pub fn text(v: &Value) -> String {
+    v.as_str().unwrap_or_default().to_string()
 }
 
 /// Preview a candidate profile against the running one, then apply it as a new active version.
 #[component]
-pub fn ChangeFlow(s: Session, candidate: RwSignal<Option<Value>>, on_applied: Callback<()>) -> impl IntoView {
+pub fn ChangeFlow(
+    s: Session,
+    candidate: RwSignal<Option<Value>>,
+    on_applied: Callback<()>,
+) -> impl IntoView {
     let preview = RwSignal::new(None::<Value>);
     let comment = RwSignal::new(String::new());
     let err = RwSignal::new(None::<String>);
     let busy = RwSignal::new(false);
     let s2 = s.clone();
     let do_preview = move |_| {
-        let Some(p) = candidate.get_untracked() else { return };
+        let Some(p) = candidate.get_untracked() else {
+            return;
+        };
         let s = s.clone();
         busy.set(true);
         spawn_local(async move {
-            match s.post::<_, Value>("/v1/admin/config/preview", &json!({ "profile": p })).await {
+            match s
+                .post::<_, Value>("/v1/admin/config/preview", &json!({ "profile": p }))
+                .await
+            {
                 Ok(v) => {
                     preview.set(Some(v));
                     err.set(None);
@@ -64,11 +84,14 @@ pub fn ChangeFlow(s: Session, candidate: RwSignal<Option<Value>>, on_applied: Ca
         });
     };
     let apply = move |_| {
-        let Some(p) = candidate.get_untracked() else { return };
+        let Some(p) = candidate.get_untracked() else {
+            return;
+        };
         let s = s2.clone();
         busy.set(true);
         spawn_local(async move {
-            let body = json!({ "profile": p, "comment": comment.get_untracked(), "activate": true });
+            let body =
+                json!({ "profile": p, "comment": comment.get_untracked(), "activate": true });
             match s.post::<_, Value>("/v1/admin/config/versions", &body).await {
                 Ok(_) => {
                     preview.set(None);
@@ -80,47 +103,76 @@ pub fn ChangeFlow(s: Session, candidate: RwSignal<Option<Value>>, on_applied: Ca
             busy.set(false);
         });
     };
+    let side = |c: &Value, key: &str, op: &str| {
+        c.get(key)
+            .or(c.get("value").filter(|_| c["op"] == op))
+            .map(|v| v.to_string())
+            .unwrap_or_default()
+    };
     view! {
-        <section class="panel" aria-label="Review and apply">
-            <div class="row">
-                <div>
-                    <label for="comment">"Change note (recorded in version history)"</label>
-                    <input id="comment" prop:value=move || comment.get() on:input=move |e| comment.set(event_target_value(&e)) />
+        <Card eyebrow=t::LABEL label=t::LABEL>
+            <div class="hs-stack">
+                <div class="hs-cluster console-cluster--form">
+                    <Field id="comment" label=t::NOTE hint=t::NOTE_HINT class="console-grow">
+                        <TextInput id="comment" value=comment />
+                    </Field>
+                    <Button icon="eye" busy=busy disabled=Signal::derive(move || busy.get() || candidate.get().is_none())
+                        on:click=do_preview>{t::PREVIEW}</Button>
                 </div>
-                <div style="flex:0 0 auto">
-                    <button class="secondary" disabled=move || busy.get() || candidate.get().is_none() on:click=do_preview>
-                        "Preview changes"
-                    </button>
-                </div>
+                {move || preview.get().map(|p| {
+                    let valid = p["valid"].as_bool().unwrap_or(false);
+                    let changes = p["changes"].as_array().cloned().unwrap_or_default();
+                    let issues = p["issues"].as_array().cloned().unwrap_or_default();
+                    let apply = apply.clone();
+                    view! {
+                        <h3 class="heading-4">{t::count(changes.len())}</h3>
+                        <Table>
+                            <thead><tr><th scope="col">{t::FIELD}</th><th scope="col">{t::BEFORE}</th><th scope="col">{t::AFTER}</th></tr></thead>
+                            <tbody>
+                                {changes.into_iter().map(|c| view! {
+                                    <tr>
+                                        <td class="console-mono">{text(&c["path"])}</td>
+                                        <td class="console-mono">{side(&c, "before", "remove")}</td>
+                                        <td class="console-mono">{side(&c, "after", "add")}</td>
+                                    </tr>
+                                }).collect_view()}
+                            </tbody>
+                        </Table>
+                        {issues.into_iter().map(|i| {
+                            let tone = if i["severity"] == "error" { Tone::Danger } else { Tone::Warning };
+                            view! { <Alert tone>{t::issue(i["path"].as_str().unwrap_or_default(), i["message"].as_str().unwrap_or_default())}</Alert> }
+                        }).collect_view()}
+                        <div class="hs-cluster">
+                            <Button variant=Variant::Primary icon="check" busy=busy
+                                disabled=Signal::derive(move || busy.get() || !valid) on:click=apply>{t::APPLY}</Button>
+                        </div>
+                    }
+                })}
+                <ErrorLine err />
             </div>
-            {move || preview.get().map(|p| {
-                let valid = p["valid"].as_bool().unwrap_or(false);
-                let changes = p["changes"].as_array().cloned().unwrap_or_default();
-                let issues = p["issues"].as_array().cloned().unwrap_or_default();
-                view! {
-                    <h3 style="margin-top:16px">{format!("{} change(s)", changes.len())}</h3>
-                    <table>
-                        <thead><tr><th>"Field"</th><th>"Before"</th><th>"After"</th></tr></thead>
-                        <tbody>
-                            {changes.into_iter().map(|c| view! {
-                                <tr>
-                                    <td><code>{c["path"].as_str().unwrap_or("").to_string()}</code></td>
-                                    <td>{c.get("before").or(c.get("value").filter(|_| c["op"] == "remove")).map(|v| v.to_string()).unwrap_or_default()}</td>
-                                    <td>{c.get("after").or(c.get("value").filter(|_| c["op"] == "add")).map(|v| v.to_string()).unwrap_or_default()}</td>
-                                </tr>
-                            }).collect_view()}
-                        </tbody>
-                    </table>
-                    {issues.into_iter().map(|i| {
-                        let cls = if i["severity"] == "error" { "err" } else { "warn" };
-                        view! { <p class=cls>{format!("{}: {}", i["path"].as_str().unwrap_or(""), i["message"].as_str().unwrap_or(""))}</p> }
+        </Card>
+    }
+}
+
+/// A select bound to `on_change`, with options `(value, label)`.
+#[component]
+pub fn SelectField(
+    id: &'static str,
+    label: &'static str,
+    #[prop(into)] options: Signal<Vec<(String, String)>>,
+    #[prop(into)] selected: Signal<String>,
+    on_change: Callback<String>,
+) -> impl IntoView {
+    view! {
+        <Field id=id label=label>
+            <InputFrame frame=crate::ui::Frame::Select>
+                <select id=id class="hs-input__control" on:change=move |e| on_change.run(event_target_value(&e))>
+                    {move || options.get().into_iter().map(|(v, l)| {
+                        let is = v == selected.get();
+                        view! { <option value=v selected=is>{l}</option> }
                     }).collect_view()}
-                    <button class="primary" style="margin-top:12px" disabled=move || busy.get() || !valid on:click=apply.clone()>
-                        "Apply as new active version"
-                    </button>
-                }
-            })}
-            <ErrorLine err />
-        </section>
+                </select>
+            </InputFrame>
+        </Field>
     }
 }

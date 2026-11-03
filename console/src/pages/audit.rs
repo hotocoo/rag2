@@ -1,5 +1,8 @@
-use super::ErrorLine;
+use super::{ErrorLine, text};
+use crate::Page;
 use crate::api::Session;
+use crate::copy::audit as t;
+use crate::ui::{Badge, Button, Card, Empty, PageHead, Table, Tone};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde_json::Value;
@@ -18,7 +21,8 @@ pub fn Audit(s: Session) -> impl IntoView {
             };
             match s.get::<Value>(&path).await {
                 Ok(v) => {
-                    events.update(|e| e.extend(v["events"].as_array().cloned().unwrap_or_default()));
+                    events
+                        .update(|e| e.extend(v["events"].as_array().cloned().unwrap_or_default()));
                     next.set(v["next"].as_str().map(String::from));
                 }
                 Err(e) => err.set(Some(e)),
@@ -27,26 +31,44 @@ pub fn Audit(s: Session) -> impl IntoView {
     };
     fetch(None);
     view! {
-        <h2>"Audit log"</h2>
-        <ErrorLine err />
-        <section class="panel">
-            <table>
-                <thead><tr><th>"Time (UTC ms)"</th><th>"Principal"</th><th>"Action"</th><th>"Tenant"</th><th>"Target"</th><th>"Outcome"</th></tr></thead>
-                <tbody>
-                    {move || events.get().into_iter().map(|e| view! {
-                        <tr>
-                            <td>{e["at_ms"].to_string()}</td>
-                            <td>{e["principal"].as_str().unwrap_or("").to_string()}</td>
-                            <td>{e["action"].as_str().unwrap_or("").to_string()}</td>
-                            <td>{e["tenant"].as_str().unwrap_or("").to_string()}</td>
-                            <td>{e["target"].as_str().unwrap_or("").to_string()}</td>
-                            <td class=if e["outcome"] == "ok" { "ok" } else { "warn" }>{e["outcome"].as_str().unwrap_or("").to_string()}</td>
-                        </tr>
-                    }).collect_view()}
-                </tbody>
-            </table>
-            <button class="secondary" style="margin-top:12px" disabled=move || next.get().is_none()
-                on:click=move |_| fetch(next.get_untracked())>"More events"</button>
-        </section>
+        <PageHead eyebrow=Page::Audit.eyebrow() title=t::TITLE lead=t::LEAD />
+        <div class="hs-stack console-stack--section">
+            <ErrorLine err />
+            <Card title=t::EVENTS>
+                <div class="hs-stack">
+                    {move || if events.with(Vec::is_empty) {
+                        view! { <Empty icon="scroll" title=t::EMPTY_TITLE text=t::EMPTY_TEXT /> }.into_any()
+                    } else {
+                        view! {
+                            <Table>
+                                <thead><tr>
+                                    <th scope="col">{t::TIME}</th><th scope="col">{t::PRINCIPAL}</th><th scope="col">{t::ACTION}</th>
+                                    <th scope="col">{t::TENANT}</th><th scope="col">{t::TARGET}</th><th scope="col">{t::OUTCOME}</th>
+                                </tr></thead>
+                                <tbody>
+                                    {events.get().into_iter().map(|e| {
+                                        let tone = if e["outcome"] == "ok" { Tone::Success } else { Tone::Warning };
+                                        view! {
+                                            <tr>
+                                                <td class="is-numeric hs-figures">{e["at_ms"].to_string()}</td>
+                                                <td>{text(&e["principal"])}</td>
+                                                <td class="console-mono">{text(&e["action"])}</td>
+                                                <td>{text(&e["tenant"])}</td>
+                                                <td>{text(&e["target"])}</td>
+                                                <td><Badge tone>{text(&e["outcome"])}</Badge></td>
+                                            </tr>
+                                        }
+                                    }).collect_view()}
+                                </tbody>
+                            </Table>
+                        }.into_any()
+                    }}
+                    <div class="hs-cluster">
+                        <Button icon="chevron-down" disabled=Signal::derive(move || next.get().is_none())
+                            on:click=move |_| fetch(next.get_untracked())>{t::MORE}</Button>
+                    </div>
+                </div>
+            </Card>
+        </div>
     }
 }

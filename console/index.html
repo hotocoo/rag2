@@ -1,11 +1,20 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>RAG2 Console</title>
-    <link data-trunk rel="css" href="style.css" />
-    <link data-trunk rel="rust" data-wasm-opt="z" />
-  </head>
-  <body></body>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RAG2 Console</title>
+<!-- Hesperides design system (git submodule, console/vendor/hesperides): tokens first, then the
+     component bundle that composes them, then the console's own layout glue. -->
+<link data-trunk rel="css" href="vendor/hesperides/tokens/tokens.css" />
+<link data-trunk rel="css" href="vendor/hesperides/components/bundle.css" />
+<link data-trunk rel="css" href="console.css" />
+<!-- tokens.css loads fonts from ../fonts/, which resolves to /fonts/ next to the built CSS. -->
+<link data-trunk rel="copy-dir" href="vendor/hesperides/fonts" />
+<link data-trunk rel="copy-file" href="vendor/hesperides/assets/Icons/hesperides-icons.svg" />
+<link data-trunk rel="copy-file" href="vendor/hesperides/assets/Logos/hesperides-mark-gilt.svg" />
+<link data-trunk rel="icon" href="vendor/hesperides/assets/Logos/hesperides-mark-gilt.svg" />
+<link data-trunk rel="rust" data-wasm-opt="z" />
+</head>
+<body></body>
 </html>

@@ -1,5 +1,8 @@
-use super::ErrorLine;
+use super::{ErrorLine, text};
+use crate::Page;
 use crate::api::{Session, seg};
+use crate::copy::documents as t;
+use crate::ui::{Button, Card, Empty, Field, PageHead, Table, TextInput, Variant};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde_json::Value;
@@ -40,7 +43,11 @@ pub fn Documents(s: Session) -> impl IntoView {
     let show = move |id: String| {
         let s = s2.clone();
         spawn_local(async move {
-            let path = format!("/v1/tenants/{}/documents/{}/chunks", seg(&tenant.get_untracked()), seg(&id));
+            let path = format!(
+                "/v1/tenants/{}/documents/{}/chunks",
+                seg(&tenant.get_untracked()),
+                seg(&id)
+            );
             match s.get::<Vec<Value>>(&path).await {
                 Ok(c) => chunks.set(Some((id, c))),
                 Err(e) => err.set(Some(e)),
@@ -48,43 +55,68 @@ pub fn Documents(s: Session) -> impl IntoView {
         });
     };
     view! {
-        <h2>"Documents"</h2>
-        <form class="panel row" on:submit=move |ev| { ev.prevent_default(); l1(None); }>
-            <div><label for="dt">"Tenant"</label><input id="dt" prop:value=move || tenant.get() on:input=move |e| tenant.set(event_target_value(&e)) /></div>
-            <div style="flex:0 0 auto"><button class="primary" type="submit">"List"</button></div>
-        </form>
-        <ErrorLine err />
-        {move || stats.get().map(|st| view! {
-            <p class="muted">{format!("{} documents · generation {} · lexical {} chunks · vector indexes {}", st["documents"], st["generation"], st["lexical_docs"], st["vector_indexes"])}</p>
-        })}
-        <section class="panel">
-            <table>
-                <thead><tr><th>"Id"</th><th>"Title"</th><th>"Version"</th><th>"Chunks"</th><th></th></tr></thead>
-                <tbody>
-                    {move || docs.get().into_iter().map(|d| {
-                        let id = d["id"].as_str().unwrap_or("").to_string();
-                        let sh = show.clone();
-                        let idc = id.clone();
+        <PageHead eyebrow=Page::Documents.eyebrow() title=t::TITLE lead=t::LEAD />
+        <div class="hs-stack console-stack--section">
+            <Card>
+                <form class="hs-cluster console-cluster--form" on:submit=move |ev| { ev.prevent_default(); l1(None); }>
+                    <Field id="dt" label=t::TENANT class="console-grow"><TextInput id="dt" value=tenant /></Field>
+                    <Button variant=Variant::Primary submit=true icon="list">{t::LIST}</Button>
+                </form>
+            </Card>
+            <ErrorLine err />
+            <Card title=t::TITLE>
+                <div class="hs-stack">
+                    {move || stats.get().map(|st| view! { <p class="console-muted body-sm hs-figures">{t::stats(&st)}</p> })}
+                    {move || if docs.with(Vec::is_empty) {
+                        view! { <Empty icon="scroll" title=t::EMPTY_TITLE text=t::EMPTY_TEXT /> }.into_any()
+                    } else {
+                        // Table children are FnOnce and take ownership; give them their own handle.
+                        let show = show.clone();
                         view! {
-                            <tr>
-                                <td><code>{id.clone()}</code></td>
-                                <td>{d["title"].as_str().unwrap_or("").to_string()}</td>
-                                <td>{d["version"].to_string()}</td>
-                                <td>{d["chunks"].as_array().map_or(0, Vec::len)}</td>
-                                <td><button class="secondary" on:click=move |_| sh(idc.clone())>"Chunks"</button></td>
-                            </tr>
-                        }
-                    }).collect_view()}
-                </tbody>
-            </table>
-            <button class="secondary" style="margin-top:12px" disabled=move || docs.with(|d| d.len() < PAGE)
-                on:click=move |_| { let last = docs.with(|d| d.last().and_then(|x| x["id"].as_str().map(String::from))); l2(last); }>"Next page"</button>
-        </section>
-        {move || chunks.get().map(|(id, cs)| view! {
-            <section class="panel">
-                <h3>{format!("Chunks of {id}")}</h3>
-                {cs.into_iter().map(|c| view! { <article class="evidence"><p class="muted">{format!("#{} · id {}", c["ordinal"], c["id"])}</p><p>{c["text"].as_str().unwrap_or("").to_string()}</p></article> }).collect_view()}
-            </section>
-        })}
+                            <Table>
+                                <thead><tr>
+                                    <th scope="col">{t::ID}</th><th scope="col">{t::DOC_TITLE}</th><th scope="col">{t::VERSION}</th>
+                                    <th scope="col">{t::CHUNKS}</th><th scope="col"></th>
+                                </tr></thead>
+                                <tbody>
+                                    {docs.get().into_iter().map(|d| {
+                                        let id = text(&d["id"]);
+                                        let sh = show.clone();
+                                        let idc = id.clone();
+                                        view! {
+                                            <tr>
+                                                <td class="console-mono">{id}</td>
+                                                <td>{text(&d["title"])}</td>
+                                                <td class="is-numeric hs-figures">{d["version"].to_string()}</td>
+                                                <td class="is-numeric hs-figures">{d["chunks"].as_array().map_or(0, Vec::len)}</td>
+                                                <td><Button icon="eye" on:click=move |_| sh(idc.clone())>{t::CHUNKS}</Button></td>
+                                            </tr>
+                                        }
+                                    }).collect_view()}
+                                </tbody>
+                            </Table>
+                        }.into_any()
+                    }}
+                    <div class="hs-cluster">
+                        <Button icon="arrow-right" disabled=Signal::derive(move || docs.with(|d| d.len() < PAGE))
+                            on:click=move |_| { let last = docs.with(|d| d.last().and_then(|x| x["id"].as_str().map(String::from))); l2(last); }>
+                            {t::NEXT}
+                        </Button>
+                    </div>
+                </div>
+            </Card>
+            {move || chunks.get().map(|(id, cs)| view! {
+                <Card title=t::chunks_of(&id)>
+                    <div class="hs-stack hs-stack--divided">
+                        {cs.into_iter().map(|c| view! {
+                            <article class="hs-stack">
+                                <p class="console-muted body-sm hs-figures">{t::chunk_meta(&c["ordinal"], &c["id"])}</p>
+                                <p class="console-passage">{text(&c["text"])}</p>
+                            </article>
+                        }).collect_view()}
+                    </div>
+                </Card>
+            })}
+        </div>
     }
 }

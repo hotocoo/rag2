@@ -1,0 +1,70 @@
+/* RAG2 console layout glue over the Hesperides design system (vendor/hesperides).
+   Holds only what the React layout primitives set inline (Stack, Cluster and Grid gaps, icon
+   sizes) plus the app shell. Every value is a Hesperides token; nothing here defines colour,
+   type or shape. */
+
+:root {
+  /* Narrowest stat tile before the overview row wraps. */
+  --console-stat-min: calc(var(--control-xl) * 4);
+  /* Login panel width: the small container. */
+  --console-login-width: var(--container-sm);
+}
+
+/* Icon: the React Icon sets these as attributes (ICON_PX and the 1.6 / 1.25 stroke rule). */
+.hs-icon { width: var(--icon-md); height: var(--icon-md); stroke-width: 1.25; }
+.hs-icon.console-icon--sm { width: var(--icon-sm); height: var(--icon-sm); stroke-width: 1.6; }
+.hs-icon.console-icon--xs { width: var(--icon-xs); height: var(--icon-xs); stroke-width: 1.6; }
+.hs-icon.console-icon--lg { width: var(--icon-lg); height: var(--icon-lg); }
+
+/* Stack, Cluster: the React defaults (gap 4 and gap 3, wrapping, centred). */
+.hs-stack { gap: var(--space-4); }
+.hs-stack.console-stack--section { gap: var(--space-8); }
+.hs-cluster { gap: var(--space-3); flex-wrap: wrap; align-items: center; }
+/* A row of fields with its action: controls line up on their bottom edge. */
+.hs-cluster.console-cluster--form { align-items: flex-end; gap: var(--space-4); }
+.console-cluster--form > .hs-field { flex: 1 1 calc(var(--console-stat-min)); }
+.console-cluster--form > .console-grow { flex: 3 1 calc(var(--console-stat-min) * 1.5); }
+.hs-field { margin: 0; }
+
+/* Stat row: Grid min="…". */
+/* Long values (a route, a profile name) wrap inside their column instead of spilling out. */
+.console-stats .hs-stat__value { overflow-wrap: anywhere; }
+.console-stats { display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fill, minmax(min(var(--console-stat-min), 100%), 1fr)); }
+
+/* Shell: SideNav beside the page. */
+.console-shell { display: flex; min-height: 100dvh; background: var(--bg); }
+.console-shell > .hs-sidenav { position: sticky; top: 0; height: 100dvh; flex: none; }
+.console-main { flex: 1; min-width: 0; padding-block: var(--space-12) var(--space-16); }
+.console-brand { display: flex; align-items: center; gap: var(--space-3); color: var(--ink); }
+.console-brand img { width: var(--control-md); height: var(--control-md); }
+.console-brand .inscription { margin: 0; }
+/* Inputs inside a ledger keep a usable width; the table wrap scrolls instead. */
+.hs-table .hs-input { min-width: calc(var(--control-xl) * 2); }
+
+/* The house trio: eyebrow, title, lead. */
+.console-head { margin-bottom: var(--space-8); }
+.console-head h1 { margin: 0; color: var(--ink); }
+.console-head .lead { margin: var(--space-3) 0 0; max-width: var(--measure); color: var(--ink-muted); }
+.hs-card__title { margin: 0 0 var(--space-4); }
+.console-muted { margin: 0; color: var(--ink-muted); }
+.console-mono { font-family: var(--font-mono); }
+.console-actions { white-space: nowrap; }
+
+/* Evidence and chunk text: reading copy at the measure. */
+.console-passage { margin: 0; max-width: var(--measure); color: var(--ink); }
+
+/* Login: a single card centred on the ground. */
+.console-login { display: grid; place-items: center; min-height: 100dvh; padding: var(--margin-page); background: var(--bg); }
+.console-login > .hs-card { width: min(100%, var(--console-login-width)); }
+
+/* Below bp-md (900px; media queries cannot read custom properties) the nav runs across the top. */
+@media (max-width: 899px) {
+  .console-shell { flex-direction: column; }
+  .console-shell > .hs-sidenav { position: static; width: auto; height: auto; border-right: 0; border-bottom: var(--border-hairline) solid var(--line-faint); }
+  /* Items flow as one wrapping row; the group titles live on as each page's eyebrow. */
+  .console-shell .hs-sidenav__scroll { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+  .console-shell .hs-sidenav__section, .console-shell .hs-sidenav ul, .console-shell .hs-sidenav li { display: contents; }
+  .console-shell .hs-sidenav__title { display: none; }
+  .console-shell .hs-sidenav__header { padding-bottom: var(--space-3); }
+  .console-main { padding-block: var(--space-8); }
+}
