@@ -1,5 +1,5 @@
 //! Hesperides components for Leptos. Each one renders the DOM and `hs-*` classes that the
-//! upstream React component renders (`vendor/hesperides/components/bundle.js`), so the vendored
+//! upstream React component renders (Hesperides `components/bundle.js`), so the copied
 //! `bundle.css` styles it unchanged. Behaviour that needs `bundle.js` (press gleam, sliding nav
 //! indicator, copy-to-clipboard) is left out.
 

@@ -3,7 +3,6 @@
 Client-side Leptos app served by `rag2 serve` when `server.console_dir` points at its build.
 
 ```sh
-git submodule update --init console/vendor/hesperides   # the design system
 rustup target add wasm32-unknown-unknown
 cargo install trunk --locked
 cd console && trunk build --release        # output: console/dist
@@ -15,8 +14,8 @@ whose roles cover what you want to do; it stores the key in session storage only
 
 ## Design system
 
-The console is styled entirely by [Hesperides](https://github.com/hotocoo/hesperides-design-system),
-vendored as a pinned git submodule in `vendor/hesperides`. Trunk links its `tokens/tokens.css` and
+The console is styled entirely by Hesperides,
+copied into `hesperides/` (tokens, component CSS, fonts, icon sprite, mark). Trunk links its `tokens/tokens.css` and
 `components/bundle.css` unchanged and copies its fonts, icon sprite and mark into `dist/`.
 
 | File | Holds |
@@ -25,5 +24,4 @@ vendored as a pinned git submodule in `vendor/hesperides`. Trunk links its `toke
 | `src/copy.rs` | Every user-facing string, in the Hesperides voice. |
 | `console.css` | Layout glue only (the shell, gaps the React layout primitives set inline). Every value is a Hesperides token. |
 
-To update the design system: `git -C console/vendor/hesperides pull` (or check out a tag), rebuild,
-and commit the new submodule pointer.
+Fonts are SIL Open Font License 1.1 (`hesperides/fonts/LICENSE.txt`).

@@ -52,7 +52,7 @@ Resume point for any new working session. Update the checkboxes as work lands.
   tools search/get_document_chunks/list_documents), webhooks (HMAC-SHA256, bounded queue, retry).
 - Console: Leptos 0.8 CSR (`console/`, trunk), verified in Chrome: login, overview, pipeline
   edit -> server preview -> apply (new version authored by the key), playground, docs, audit.
-  Styled by the Hesperides design system (git submodule `console/vendor/hesperides`, pinned;
+  Styled by the Hesperides design system (files in `console/hesperides`;
   `src/ui.rs` renders its `hs-*` markup, `src/copy.rs` holds all copy); re-verified in Chrome
   2026-11-03 at 1200px and 390px (fonts, sprite, preview -> apply -> history).
   Toolchain pinned to rustup 1.99.1 (`rust-toolchain.toml`) for wasm32.

@@ -1,4 +1,4 @@
-/* RAG2 console layout glue over the Hesperides design system (vendor/hesperides).
+/* RAG2 console layout glue over the Hesperides design system (console/hesperides).
    Holds only what the React layout primitives set inline (Stack, Cluster and Grid gaps, icon
    sizes) plus the app shell. Every value is a Hesperides token; nothing here defines colour,
    type or shape. */

@@ -1,6 +1,6 @@
 //! RAG2 administration console: overview, guided configuration (with preview, activation,
 //! history and rollback), retrieval playground, documents, tenants and audit. Styled by the
-//! Hesperides design system (`vendor/hesperides`); see `ui.rs`.
+//! Hesperides design system (`console/hesperides`); see `ui.rs`.
 
 mod api;
 mod copy;
