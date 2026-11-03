@@ -1,0 +1,44 @@
+[package]
+name = "rag2"
+description = "RAG2 in one dependency: embed the retrieval engine in any Rust program or mount its HTTP API into an existing server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+default = ["models", "plugins", "server"]
+# Embedders (candle ModernBERT, OpenAI-compatible HTTP) and decision models (d1 System One, Laya).
+models = ["dep:rag2-embed", "dep:rag2-laya"]
+# Sandboxed Wasm plugins (Wasmtime).
+plugins = ["dep:rag2-plugins"]
+# The HTTP API as a mountable axum Router.
+server = ["dep:rag2-server", "dep:axum"]
+# gRPC is on with `server` (rag2-server default; needs protoc at build time).
+# Rust client for a remote RAG2.
+client = ["dep:rag2-client"]
+metal = ["models", "rag2-laya/metal", "rag2-embed/metal"]
+cuda = ["models", "rag2-laya/cuda", "rag2-embed/cuda"]
+
+[dependencies]
+rag2-core.workspace = true
+rag2-config.workspace = true
+rag2-engine.workspace = true
+rag2-embed = { workspace = true, optional = true }
+rag2-laya = { workspace = true, optional = true }
+rag2-plugins = { workspace = true, optional = true }
+rag2-server = { workspace = true, optional = true }
+rag2-client = { workspace = true, optional = true }
+axum = { workspace = true, optional = true }
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio.workspace = true
+tower.workspace = true
+axum.workspace = true
+
+[lints]
+workspace = true

@@ -272,19 +272,16 @@ fn spawn_maintenance(engine: Arc<Engine>) {
     });
 }
 
-/// Run the service until SIGINT/SIGTERM, then drain in-flight requests within the grace period
-/// and flush indexes.
-pub async fn serve(
+/// The HTTP API as an axum [`Router`], with its background work (startup recovery, index
+/// maintenance, connector schedules, replica pulling) started on the current tokio runtime. Mount
+/// it into an existing server (`Router::nest`, `Router::merge`) or let [`serve`] run it alone.
+/// Readiness (`/readyz`) turns true once recovery finishes.
+pub fn app(
     engine: Arc<Engine>,
     metrics: Option<metrics_exporter_prometheus::PrometheusHandle>,
-) -> Result<()> {
+) -> Result<(Router, Arc<AppState>)> {
     let state = AppState::new(engine.clone(), metrics)?;
     let p = engine.config().current().profile.clone();
-    let addr: SocketAddr = p
-        .server
-        .listen
-        .parse()
-        .map_err(|_| Error::InvalidInput("server.listen".into()))?;
     let app = router(state.clone());
     {
         let (e, s) = (engine.clone(), state.clone());
@@ -307,6 +304,22 @@ pub async fn serve(
         tracing::info!(primary = ?p.cluster.primary_url, "replica: pulling from primary");
         cluster::spawn_replica(engine.clone());
     }
+    Ok((app, state))
+}
+
+/// Run the service until SIGINT/SIGTERM, then drain in-flight requests within the grace period
+/// and flush indexes.
+pub async fn serve(
+    engine: Arc<Engine>,
+    metrics: Option<metrics_exporter_prometheus::PrometheusHandle>,
+) -> Result<()> {
+    let (app, state) = app(engine.clone(), metrics)?;
+    let p = engine.config().current().profile.clone();
+    let addr: SocketAddr = p
+        .server
+        .listen
+        .parse()
+        .map_err(|_| Error::InvalidInput("server.listen".into()))?;
     let grace = Duration::from_millis(p.server.shutdown_grace_ms);
     let handle = axum_server::Handle::new();
     {

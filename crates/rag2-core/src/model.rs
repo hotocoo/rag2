@@ -22,6 +22,19 @@ pub struct Document {
     pub metadata: Metadata,
 }
 
+impl Document {
+    /// A document with an id and text; set `title`, `source` and `metadata` as needed.
+    pub fn new(id: &str, text: impl Into<String>) -> crate::Result<Self> {
+        Ok(Document {
+            id: DocumentId::new(id)?,
+            title: None,
+            text: text.into(),
+            source: None,
+            metadata: Metadata::new(),
+        })
+    }
+}
+
 /// A retrievable span of a document. Offsets are byte offsets into the document text.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Chunk {

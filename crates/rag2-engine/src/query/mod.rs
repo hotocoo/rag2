@@ -12,7 +12,7 @@ use crate::api::{QueryRequest, QueryResponse};
 use crate::components::Components;
 use crate::text::{content_words, words};
 use fuse::{Fused, RankedList};
-use rag2_config::schema::{DecisionGate, Pipeline, Profile, RetrieverConfig};
+use rag2_config::schema::{DecisionGate, GateMode, Pipeline, Profile, RetrieverConfig};
 use rag2_core::interfaces::{Answer, Question, check_answers};
 use rag2_core::model::{
     AbstainReason, Abstention, Chunk, Contradiction, DocumentRecord, Evidence, Hit, Metadata,
@@ -63,48 +63,111 @@ fn us(t: Instant) -> u64 {
     t.elapsed().as_micros() as u64
 }
 
-/// Ask the gate's yes/no question over each state. `None` (model missing, failed or unsure)
-/// keeps the item: a broken gate must not silently delete evidence.
-fn ask_yes_each(
+/// The state a relevance gate judges: one query and one passage.
+pub fn relevance_state(query: &str, passage: &str) -> String {
+    format!("Query: {query}\nPassage: {passage}")
+}
+
+/// The state a contradiction check judges: two passages.
+pub fn contradiction_state(a: &str, b: &str) -> String {
+    format!("Passage A: {a}\nPassage B: {b}")
+}
+
+/// Passages numbered `[1]`, `[2]`, ... for a joint gate state.
+fn numbered<'a>(passages: impl IntoIterator<Item = &'a str>) -> String {
+    passages
+        .into_iter()
+        .enumerate()
+        .map(|(i, p)| format!("Passage [{}]: {p}", i + 1))
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
+/// The state a joint relevance gate judges: one query and every passage, numbered.
+pub fn joint_relevance_state<'a>(
+    query: &str,
+    passages: impl IntoIterator<Item = &'a str>,
+) -> String {
+    format!("Query: {query}\n\n{}", numbered(passages))
+}
+
+/// One gate verdict: `Some(yes)` when the model answered with enough confidence, else `None`.
+fn verdict(gate: &DecisionGate, a: &Answer) -> Option<bool> {
+    match a {
+        Answer::YesNo { yes, confidence } if *confidence >= gate.min_confidence => Some(*yes),
+        _ => None,
+    }
+}
+
+fn gate_failed(gate: &DecisionGate, e: &rag2_core::Error, warnings: &mut Vec<String>) {
+    warnings.push(format!(
+        "decision model {} failed ({e}); gate skipped",
+        gate.model
+    ));
+}
+
+/// Ask the gate about `n` items, per item or jointly as configured. `None` (model missing,
+/// failed or unsure) keeps the item: a broken gate must not silently delete evidence.
+fn ask_gate(
     comps: &Components,
     gate: &DecisionGate,
-    states: &[String],
+    n: usize,
+    per_item: impl FnOnce() -> Vec<String>,
+    joint: impl FnOnce() -> (String, Vec<String>),
     warnings: &mut Vec<String>,
 ) -> Vec<Option<bool>> {
+    if n == 0 {
+        return Vec::new();
+    }
     let Some(m) = comps.decision_models.get(&gate.model) else {
         warnings.push(format!(
             "decision model {} not loaded; gate skipped",
             gate.model
         ));
-        return vec![None; states.len()];
+        return vec![None; n];
     };
-    let q = [Question::YesNo {
-        instructions: gate.instructions.clone(),
-    }];
-    let mut failed = None;
-    let out = m
-        .decide_each(states, &q)
-        .into_iter()
-        .map(|r| match r.and_then(|a| check_answers(&q, &a).map(|_| a)) {
-            Ok(a) => match a.as_slice() {
-                [Answer::YesNo { yes, confidence }] if *confidence >= gate.min_confidence => {
-                    Some(*yes)
-                }
-                _ => None,
-            },
-            Err(e) => {
-                failed.get_or_insert(e);
-                None
+    match gate.mode {
+        GateMode::PerItem => {
+            let q = [Question::YesNo {
+                instructions: gate.instructions.clone(),
+            }];
+            let mut failed = None;
+            let out = m
+                .decide_each(&per_item(), &q)
+                .into_iter()
+                .map(|r| match r.and_then(|a| check_answers(&q, &a).map(|_| a)) {
+                    Ok(a) => a.first().and_then(|a| verdict(gate, a)),
+                    Err(e) => {
+                        failed.get_or_insert(e);
+                        None
+                    }
+                })
+                .collect();
+            if let Some(e) = failed {
+                gate_failed(gate, &e, warnings);
             }
-        })
-        .collect();
-    if let Some(e) = failed {
-        warnings.push(format!(
-            "decision model {} failed ({e}); gate skipped",
-            gate.model
-        ));
+            out
+        }
+        GateMode::Joint => {
+            let (state, about) = joint();
+            let q: Vec<Question> = about
+                .iter()
+                .map(|a| Question::YesNo {
+                    instructions: format!("{a}: {}", gate.instructions),
+                })
+                .collect();
+            match m
+                .decide(&state, &q)
+                .and_then(|a| check_answers(&q, &a).map(|_| a))
+            {
+                Ok(a) => a.iter().map(|a| verdict(gate, a)).collect(),
+                Err(e) => {
+                    gate_failed(gate, &e, warnings);
+                    vec![None; n]
+                }
+            }
+        }
     }
-    out
 }
 
 impl Engine {
@@ -279,11 +342,21 @@ impl Engine {
         if let Some(gate) = &pl.relevance_gate {
             let before = ev.len();
             ev.truncate(top_k);
-            let states: Vec<String> = ev
-                .iter()
-                .map(|e| format!("Query: {q}\nPassage: {}", e.text))
-                .collect();
-            let keep = ask_yes_each(&comps, gate, &states, &mut warnings);
+            let keep = ask_gate(
+                &comps,
+                gate,
+                ev.len(),
+                || ev.iter().map(|e| relevance_state(q, &e.text)).collect(),
+                || {
+                    (
+                        joint_relevance_state(q, ev.iter().map(|e| e.text.as_str())),
+                        (1..=ev.len())
+                            .map(|i| format!("About passage [{i}]"))
+                            .collect(),
+                    )
+                },
+                &mut warnings,
+            );
             ev = ev
                 .into_iter()
                 .zip(keep)
@@ -543,11 +616,38 @@ fn confirm(
             .map(|e| e.text.as_str())
             .unwrap_or("")
     };
-    let states: Vec<String> = found
+    // Joint: only the passages some pair mentions, numbered in evidence order.
+    let involved: Vec<&Evidence> = ev
         .iter()
-        .map(|c| format!("Passage A: {}\nPassage B: {}", text(c.a), text(c.b)))
+        .filter(|e| found.iter().any(|c| c.a == e.chunk_id || c.b == e.chunk_id))
         .collect();
-    let keep = ask_yes_each(comps, gate, &states, warnings);
+    let num = |id: ChunkId| {
+        involved
+            .iter()
+            .position(|e| e.chunk_id == id)
+            .map_or(0, |i| i + 1)
+    };
+    let keep = ask_gate(
+        comps,
+        gate,
+        found.len(),
+        || {
+            found
+                .iter()
+                .map(|c| contradiction_state(text(c.a), text(c.b)))
+                .collect()
+        },
+        || {
+            (
+                numbered(involved.iter().map(|e| e.text.as_str())),
+                found
+                    .iter()
+                    .map(|c| format!("About passages [{}] and [{}]", num(c.a), num(c.b)))
+                    .collect(),
+            )
+        },
+        warnings,
+    );
     found
         .into_iter()
         .zip(keep)

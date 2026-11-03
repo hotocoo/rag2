@@ -14,16 +14,14 @@ path = "src/main.rs"
 [features]
 default = ["models", "plugins"]
 # Sandboxed Wasm plugins (Wasmtime).
-plugins = ["dep:rag2-plugins"]
-# Local models on candle (Laya decision checkpoints, ModernBERT embedders) and HTTP embedders.
-models = ["dep:rag2-laya", "dep:rag2-embed"]
-metal = ["models", "rag2-laya/metal", "rag2-embed/metal"]
-cuda = ["models", "rag2-laya/cuda", "rag2-embed/cuda"]
+plugins = ["rag2/plugins"]
+# Local models on candle (Laya, ModernBERT), HTTP embedders, d1 System One decision models.
+models = ["rag2/models"]
+metal = ["rag2/metal"]
+cuda = ["rag2/cuda"]
 
 [dependencies]
-rag2-laya = { workspace = true, optional = true }
-rag2-embed = { workspace = true, optional = true }
-rag2-plugins = { workspace = true, optional = true }
+rag2.workspace = true
 rag2-core.workspace = true
 rag2-config.workspace = true
 rag2-engine.workspace = true

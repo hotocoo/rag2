@@ -3,6 +3,7 @@
 //! and `docs/benchmarks/vector-index.md` records the numbers.
 
 mod data;
+mod decision;
 mod retrieval;
 
 use anyhow::{Context, Result, bail};
@@ -28,6 +29,8 @@ enum Cmd {
     Vector(VectorArgs),
     /// Retrieval quality and latency over a BEIR-format dataset, through the embedded engine.
     Retrieval(retrieval::RetrievalArgs),
+    /// A real decision model (d1 on llama.cpp) on labelled data, under load and inside RAG2.
+    Decision(decision::DecisionArgs),
 }
 
 #[derive(Clone, Copy, ValueEnum, Serialize, PartialEq)]
@@ -308,6 +311,7 @@ fn main() -> Result<()> {
     match Cli::parse().cmd {
         Cmd::Vector(a) => println!("{}", serde_json::to_string(&vector(a)?)?),
         Cmd::Retrieval(a) => println!("{}", serde_json::to_string(&retrieval::run(a)?)?),
+        Cmd::Decision(a) => println!("{}", serde_json::to_string(&decision::run(a)?)?),
     }
     Ok(())
 }

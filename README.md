@@ -29,6 +29,22 @@ curl -s localhost:8080/v1/tenants/docs/query \
 
 The OpenAPI 3.1 document is served at `/v1/openapi.json` (or `rag2 openapi`).
 
+## Integrate
+
+Pick the one that matches your application; each is one step.
+
+| You have | Do this |
+|---|---|
+| A Rust program | `rag2 = { git = "https://github.com/hotocoo/rag2" }`, then `let rag = rag2::open("./rag2-data")?;` and `rag.ingest(..)` / `rag.query(..)` ([example](crates/rag2/examples/embed.rs)) |
+| An axum / tower server | `.nest("/rag", rag2::router(rag2::open("./rag2-data")?)?)` adds the full API to your app ([example](crates/rag2/examples/mount.rs)) |
+| Any other server or language | Run the sidecar (`rag2 serve`, `docker compose up`, Helm, systemd: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)) and call REST ([OpenAPI](docs/openapi.json)), gRPC ([proto](crates/rag2-server/proto/rag2.proto)) or the [TypeScript SDK](sdks/typescript) |
+| An AI agent / IDE | Point it at the MCP endpoint (`POST /mcp`) or the stdio bridge ([docs/INTEGRATIONS.md](docs/INTEGRATIONS.md)) |
+
+Cargo features keep the build to what you use: `models` (candle and HTTP embedders, d1 and Laya
+decision models), `plugins` (Wasmtime), `server` (HTTP/gRPC API), `client` (Rust client),
+`metal` / `cuda`. `default-features = false` gives the engine alone. Behavior (retrievers,
+routing, gates, limits, auth) is set in the profile, never in code.
+
 ## What it does
 
 | Capability | Where it is configured |
@@ -90,6 +106,7 @@ Numbers come only from the reproducible harness in `crates/rag2-bench`; see
 | `rag2-laya` | Decision models: Laya in-process, Laya and System One (d1) over HTTP |
 | `rag2-server` | HTTP service, auth, RBAC, rate limits, audit, metrics |
 | `rag2-client` | Rust SDK |
+| `rag2` | One-dependency facade: `open`, `router`, feature-gated components |
 | `rag2-cli` | The `rag2` binary |
 | `rag2-bench` | Benchmarks |
 

@@ -3714,6 +3714,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
+name = "rag2"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "rag2-client",
+ "rag2-config",
+ "rag2-core",
+ "rag2-embed",
+ "rag2-engine",
+ "rag2-laya",
+ "rag2-plugins",
+ "rag2-server",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tower",
+]
+
+[[package]]
 name = "rag2-bench"
 version = "0.1.0"
 dependencies = [
@@ -3725,9 +3744,11 @@ dependencies = [
  "rag2-core",
  "rag2-embed",
  "rag2-engine",
+ "rag2-laya",
  "rag2-vector",
  "rand 0.10.3",
  "rayon",
+ "reqwest",
  "serde",
  "serde_json",
 ]
@@ -3740,13 +3761,11 @@ dependencies = [
  "clap",
  "getrandom 0.4.3",
  "metrics-exporter-prometheus",
+ "rag2",
  "rag2-client",
  "rag2-config",
  "rag2-core",
- "rag2-embed",
  "rag2-engine",
- "rag2-laya",
- "rag2-plugins",
  "rag2-server",
  "reqwest",
  "serde",
@@ -3869,6 +3888,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "tempfile",
  "tokenizers",
  "tokio",
  "tracing",

@@ -781,6 +781,7 @@ mod tests {
             model: "laya".into(),
             instructions: "x".into(),
             min_confidence: 0.9,
+            mode: Default::default(),
         });
         let e = errors(&p);
         assert!(e.contains(&"default_pipeline".to_string()));

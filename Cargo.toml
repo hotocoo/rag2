@@ -9,12 +9,13 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.98"
 license = "Apache-2.0"
-repository = "https://github.com/acotech/rag2"
+repository = "https://github.com/hotocoo/rag2"
 publish = false
 
 # Every version here is the latest stable release on crates.io at the time it was added
 # (policy: docs/DEPENDENCIES.md). Pre-releases are never used.
 [workspace.dependencies]
+rag2 = { path = "crates/rag2", default-features = false }
 rag2-core = { path = "crates/rag2-core" }
 rag2-config = { path = "crates/rag2-config" }
 rag2-storage = { path = "crates/rag2-storage" }

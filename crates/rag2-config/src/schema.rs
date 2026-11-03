@@ -492,8 +492,8 @@ pub enum DecisionModelConfig {
         serve_id: String,
         #[serde(default = "decision_timeout_ms")]
         timeout_ms: u64,
-        /// Requests in flight at once when a stage asks several questions (relevance gate,
-        /// contradiction checks). Match the server's parallel slots (`llama-server -np`).
+        /// Requests in flight to this model at once, across all queries; more wait in a FIFO
+        /// queue and the wait counts against `timeout_ms`. Match the server's `-np`.
         #[serde(default = "decision_concurrency")]
         concurrency: usize,
     },
@@ -797,6 +797,20 @@ pub struct DecisionGate {
     pub instructions: String,
     #[serde(default = "decision_min_conf")]
     pub min_confidence: f32,
+    #[serde(default)]
+    pub mode: GateMode,
+}
+
+/// How a gate asks about several passages (or passage pairs).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum GateMode {
+    /// One call per passage or pair, run concurrently up to the model's `concurrency`.
+    #[default]
+    PerItem,
+    /// One call: every passage numbered in one state, one question per passage or pair. One
+    /// forward pass on models that read many questions at once (d1); the state grows with top_k.
+    Joint,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]

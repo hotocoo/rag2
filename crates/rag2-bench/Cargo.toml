@@ -17,6 +17,8 @@ rag2-vector.workspace = true
 rag2-engine.workspace = true
 rag2-config.workspace = true
 rag2-embed.workspace = true
+rag2-laya.workspace = true
+reqwest = { workspace = true, features = ["blocking"] }
 embedvec.workspace = true
 clap.workspace = true
 rand.workspace = true

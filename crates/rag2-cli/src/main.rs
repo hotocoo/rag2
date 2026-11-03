@@ -201,7 +201,7 @@ async fn serve(
         tracing::info!(file = %f.display(), version = v, "profile applied");
     }
     let engine =
-        rag2_engine::Engine::open(manager.clone(), factories()).context("opening engine")?;
+        rag2_engine::Engine::open(manager.clone(), rag2::factories()).context("opening engine")?;
     let _guard = match (watch, &file) {
         (true, Some(f)) => Some(rag2_config::watch::watch_file(
             manager.clone(),
@@ -212,20 +212,6 @@ async fn serve(
     };
     rag2_server::serve(engine, Some(metrics)).await?;
     Ok(())
-}
-
-/// Component factories compiled into this binary.
-fn factories() -> Vec<Arc<dyn rag2_engine::components::ComponentFactory>> {
-    #[allow(unused_mut)]
-    let mut f: Vec<Arc<dyn rag2_engine::components::ComponentFactory>> = Vec::new();
-    #[cfg(feature = "models")]
-    {
-        f.push(Arc::new(rag2_embed::EmbedFactory));
-        f.push(Arc::new(rag2_laya::adapter::LayaFactory));
-    }
-    #[cfg(feature = "plugins")]
-    f.push(Arc::new(rag2_plugins::PluginFactory));
-    f
 }
 
 /// Quiet period after the last file event before a hot reload.

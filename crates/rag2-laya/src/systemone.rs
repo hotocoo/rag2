@@ -4,17 +4,18 @@
 //! Wire (captured from llama.cpp 0.8.0, fixture in `tests/fixtures/systemone_response.json`):
 //! request `{state, questions: {key: {type: noul|choice, instructions, criteria?}}}`, response
 //! `{answers: {key: {type, noul} | {type, choice, confidence, probabilities}}}`. One state per
-//! request; [`DecisionProvider::decide_each`] fans states out over `concurrency` requests, which
-//! should match the server's parallel slots (`-np`).
+//! request. At most `concurrency` requests are in flight per provider, across all queries; more wait
+//! in a FIFO queue ([`crate::admission`]) and the wait counts against the request timeout.
 //!
 //! Mapping: `noul` is P(yes), so `yes = P >= NOUL_YES_THRESHOLD` and `confidence = max(P, 1-P)`
 //! (the probability of the answer given). `choice` keeps the server's label and confidence.
 
+use crate::admission::FairLimiter;
 use rag2_core::interfaces::{Answer, DecisionProvider, Question, check_answers};
 use rag2_core::{Error, Result};
 use serde_json::{Map, Value, json};
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 /// P(yes) at or above which a `noul` answer reads as yes.
 pub const NOUL_YES_THRESHOLD: f64 = 0.5;
@@ -107,6 +108,8 @@ pub struct SystemOneHttp {
     endpoint: String,
     serve_id: String,
     concurrency: usize,
+    timeout: Duration,
+    limiter: FairLimiter,
     http: reqwest::blocking::Client,
 }
 
@@ -128,6 +131,8 @@ impl SystemOneHttp {
             endpoint: endpoint.trim_end_matches('/').to_string(),
             serve_id: serve_id.to_string(),
             concurrency,
+            timeout,
+            limiter: FairLimiter::new(concurrency),
             http: reqwest::blocking::Client::builder()
                 .timeout(timeout)
                 .pool_max_idle_per_host(concurrency)
@@ -163,9 +168,18 @@ impl DecisionProvider for SystemOneHttp {
 
     fn decide(&self, state: &str, questions: &[Question]) -> Result<Vec<Answer>> {
         let unavailable = |e: String| Error::Unavailable(format!("{}: {e}", self.label));
+        // One deadline for queueing and the request together.
+        let deadline = Instant::now() + self.timeout;
+        let _permit = self.limiter.acquire(deadline).ok_or_else(|| {
+            unavailable(format!(
+                "saturated: no free slot within {} ms",
+                self.timeout.as_millis()
+            ))
+        })?;
         let resp = self
             .http
             .post(format!("{}/v1/systemone", self.endpoint))
+            .timeout(deadline.saturating_duration_since(Instant::now()))
             .json(&request_json(state, questions))
             .send()
             .map_err(|e| unavailable(e.to_string()))?;
@@ -180,7 +194,8 @@ impl DecisionProvider for SystemOneHttp {
         parse_answers(&v, questions)
     }
 
-    /// Up to `concurrency` requests in flight; results keep the order of `states`.
+    /// Up to `concurrency` requests in flight (shared with every other caller); results keep the
+    /// order of `states`.
     fn decide_each(&self, states: &[String], questions: &[Question]) -> Vec<Result<Vec<Answer>>> {
         let workers = self.concurrency.min(states.len());
         if workers <= 1 {

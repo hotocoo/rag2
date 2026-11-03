@@ -22,39 +22,39 @@ use std::time::Instant;
 pub struct RetrievalArgs {
     /// BEIR dataset directory.
     #[arg(long)]
-    data: PathBuf,
+    pub(crate) data: PathBuf,
     /// Scratch directory for storage and indexes (wiped first).
     #[arg(long)]
-    work: PathBuf,
+    pub(crate) work: PathBuf,
     /// `hash` or a ModernBERT sentence-embedding checkpoint directory.
     #[arg(long, default_value = "hash")]
-    embedder: String,
+    pub(crate) embedder: String,
     /// Device for candle embedders: cpu, metal, cuda.
     #[arg(long, default_value = "cpu")]
-    device: String,
+    pub(crate) device: String,
     #[arg(long, default_value = "")]
-    query_prefix: String,
+    pub(crate) query_prefix: String,
     #[arg(long, default_value = "")]
-    document_prefix: String,
+    pub(crate) document_prefix: String,
     #[arg(long, default_value_t = 10)]
-    k: usize,
+    pub(crate) k: usize,
     /// Documents per ingest call.
     #[arg(long, default_value_t = 256)]
-    batch: usize,
+    pub(crate) batch: usize,
     /// Threads for the concurrent-throughput phase.
     #[arg(long, default_value_t = 8)]
-    threads: usize,
+    pub(crate) threads: usize,
     /// Chunks retrieved per query before collapsing to documents (as a multiple of k).
     #[arg(long, default_value_t = 3)]
-    chunk_factor: usize,
+    pub(crate) chunk_factor: usize,
     #[arg(long, default_value = "lexical,dense,hybrid")]
-    pipelines: String,
+    pub(crate) pipelines: String,
     /// Also measure the last pipeline while a second thread re-ingests the corpus.
     #[arg(long)]
-    interference: bool,
+    pub(crate) interference: bool,
     /// Also measure cold start and index-loss recovery after the run.
     #[arg(long)]
-    recovery: bool,
+    pub(crate) recovery: bool,
 }
 
 #[derive(Serialize)]
@@ -116,16 +116,16 @@ const FIT_RIDGE: f64 = 1.0;
 const FIT_MAX_STEP: f64 = 1.0;
 const LOGIT_EPS: f64 = 1e-4;
 
-fn logit(p: f64) -> f64 {
+pub(crate) fn logit(p: f64) -> f64 {
     let p = p.clamp(LOGIT_EPS, 1.0 - LOGIT_EPS);
     (p / (1.0 - p)).ln()
 }
 
-fn sigmoid(x: f64) -> f64 {
+pub(crate) fn sigmoid(x: f64) -> f64 {
     1.0 / (1.0 + (-x).exp())
 }
 
-fn ece(pairs: &[(f64, bool)]) -> f64 {
+pub(crate) fn ece(pairs: &[(f64, bool)]) -> f64 {
     let mut bins = vec![(0.0f64, 0.0f64, 0usize); ECE_BINS];
     for (p, y) in pairs {
         let b = ((p * ECE_BINS as f64) as usize).min(ECE_BINS - 1);
@@ -142,7 +142,7 @@ fn ece(pairs: &[(f64, bool)]) -> f64 {
 
 /// Logistic regression of the label on logit(raw) by Newton's method (two parameters), with a
 /// small ridge term so separable data cannot push the weights to infinity.
-fn fit(train: &[(f64, bool)]) -> (f64, f64) {
+pub(crate) fn fit(train: &[(f64, bool)]) -> (f64, f64) {
     let (mut a, mut b) = (1.0, 0.0);
     for _ in 0..FIT_STEPS {
         let (mut ga, mut gb, mut haa, mut hab, mut hbb) = (
@@ -217,7 +217,7 @@ pub struct Report {
     recovery: Option<Recovery>,
 }
 
-fn read_jsonl(p: &Path) -> Result<Vec<serde_json::Value>> {
+pub(crate) fn read_jsonl(p: &Path) -> Result<Vec<serde_json::Value>> {
     std::fs::read_to_string(p)
         .with_context(|| format!("reading {}", p.display()))?
         .lines()
@@ -226,7 +226,7 @@ fn read_jsonl(p: &Path) -> Result<Vec<serde_json::Value>> {
         .collect()
 }
 
-fn qrels(p: &Path) -> Result<HashMap<String, HashSet<String>>> {
+pub(crate) fn qrels(p: &Path) -> Result<HashMap<String, HashSet<String>>> {
     let mut out: HashMap<String, HashSet<String>> = HashMap::new();
     for line in std::fs::read_to_string(p)?.lines().skip(1) {
         let cols: Vec<&str> = line.split('\t').collect();
@@ -239,7 +239,7 @@ fn qrels(p: &Path) -> Result<HashMap<String, HashSet<String>>> {
     Ok(out)
 }
 
-fn profile(a: &RetrievalArgs) -> Profile {
+pub(crate) fn profile(a: &RetrievalArgs) -> Profile {
     let mut p = Profile::minimal("bench");
     p.storage.data_dir = a.work.join("data").to_string_lossy().into_owned();
     p.indexes.lexical.commit_interval_ms = 0;
@@ -321,7 +321,7 @@ fn rss_mb() -> f64 {
 }
 
 /// Ranked unique document ids from a response.
-fn ranked_docs(r: &rag2_engine::QueryResponse, k: usize) -> Vec<String> {
+pub(crate) fn ranked_docs(r: &rag2_engine::QueryResponse, k: usize) -> Vec<String> {
     let mut seen = HashSet::new();
     r.evidence
         .iter()
@@ -331,7 +331,7 @@ fn ranked_docs(r: &rag2_engine::QueryResponse, k: usize) -> Vec<String> {
         .collect()
 }
 
-fn score(ranked: &[String], rel: &HashSet<String>, k: usize) -> (f64, f64, f64) {
+pub(crate) fn score(ranked: &[String], rel: &HashSet<String>, k: usize) -> (f64, f64, f64) {
     let hits = ranked.iter().take(k).filter(|d| rel.contains(*d)).count();
     let recall = hits as f64 / rel.len().max(1) as f64;
     let dcg: f64 = ranked
@@ -350,6 +350,25 @@ fn score(ranked: &[String], rel: &HashSet<String>, k: usize) -> (f64, f64, f64) 
         .position(|d| rel.contains(d))
         .map_or(0.0, |i| 1.0 / (i as f64 + 1.0));
     (recall, if idcg > 0.0 { dcg / idcg } else { 0.0 }, mrr)
+}
+
+/// BEIR corpus rows as documents (title prepended to the text).
+pub(crate) fn beir_documents(corpus: &[serde_json::Value]) -> Vec<Document> {
+    corpus
+        .iter()
+        .filter_map(|d| {
+            let id = DocumentId::new(d["_id"].as_str()?).ok()?;
+            let title = d["title"].as_str().unwrap_or("").to_string();
+            let body = d["text"].as_str().unwrap_or("");
+            Some(Document {
+                id,
+                title: Some(title.clone()),
+                text: format!("{title}\n\n{body}"),
+                source: None,
+                metadata: Metadata::new(),
+            })
+        })
+        .collect()
 }
 
 pub fn run(a: RetrievalArgs) -> Result<Report> {
@@ -380,21 +399,7 @@ pub fn run(a: RetrievalArgs) -> Result<Report> {
     let engine = Engine::open(cfg, vec![Arc::new(rag2_embed::EmbedFactory)])?;
     let t = TenantId::new("bench")?;
 
-    let docs: Vec<Document> = corpus
-        .iter()
-        .filter_map(|d| {
-            let id = DocumentId::new(d["_id"].as_str()?).ok()?;
-            let title = d["title"].as_str().unwrap_or("").to_string();
-            let body = d["text"].as_str().unwrap_or("");
-            Some(Document {
-                id,
-                title: Some(title.clone()),
-                text: format!("{title}\n\n{body}"),
-                source: None,
-                metadata: Metadata::new(),
-            })
-        })
-        .collect();
+    let docs = beir_documents(&corpus);
     let n_docs = docs.len();
     eprintln!(
         "[bench] ingesting {n_docs} documents with embedder {}",
@@ -539,7 +544,7 @@ pub fn run(a: RetrievalArgs) -> Result<Report> {
     })
 }
 
-fn percentiles(samples: &[u64]) -> Result<(u64, u64)> {
+pub(crate) fn percentiles(samples: &[u64]) -> Result<(u64, u64)> {
     let mut h = Histogram::<u64>::new(3)?;
     for s in samples {
         h.record(*s)?;
