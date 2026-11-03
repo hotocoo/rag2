@@ -1,6 +1,6 @@
-//! RAG2's in-process runtime for Laya decision checkpoints, on candle, plus the decision adapters
-//! ([`adapter`] for Laya, [`systemone`] for System One servers such as Liquid AI d1 on llama.cpp).
-//! Each exposes a [`rag2_core::interfaces::DecisionProvider`].
+//! RAG2's in-process runtime for Laya decision checkpoints, on candle. [`adapter`] exposes a
+//! checkpoint as a [`rag2_core::interfaces::DecisionProvider`]; HTTP decision models (d1, Laya
+//! sidecars) live in `rag2-decision`.
 //!
 //! Laya is a non-autoregressive decision model: a ModernBERT encoder, a two-layer transformer head,
 //! and a scorer that reads one hidden state per option. This crate runs a checkpoint with candle
@@ -191,11 +191,7 @@ pub fn type_name(qtype: usize) -> &'static str {
 }
 
 pub mod adapter;
-pub mod admission;
-pub mod encoder;
-pub mod fused;
 pub mod model;
-pub mod systemone;
 
 #[cfg(test)]
 mod tests {

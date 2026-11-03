@@ -10,8 +10,11 @@ publish.workspace = true
 
 [features]
 default = ["models", "plugins", "server"]
-# Embedders (candle ModernBERT, OpenAI-compatible HTTP) and decision models (d1 System One, Laya).
-models = ["dep:rag2-embed", "dep:rag2-laya"]
+# Decision models over HTTP: d1 (System One on llama.cpp) and Laya sidecars. No candle.
+decision = ["dep:rag2-decision"]
+# Everything model-related: `decision`, embedders (candle ModernBERT, OpenAI-compatible HTTP) and
+# in-process Laya checkpoints (candle).
+models = ["decision", "dep:rag2-embed", "dep:rag2-laya"]
 # Sandboxed Wasm plugins (Wasmtime).
 plugins = ["dep:rag2-plugins"]
 # The HTTP API as a mountable axum Router.
@@ -28,6 +31,7 @@ rag2-config.workspace = true
 rag2-engine.workspace = true
 rag2-embed = { workspace = true, optional = true }
 rag2-laya = { workspace = true, optional = true }
+rag2-decision = { workspace = true, optional = true }
 rag2-plugins = { workspace = true, optional = true }
 rag2-server = { workspace = true, optional = true }
 rag2-client = { workspace = true, optional = true }

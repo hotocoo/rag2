@@ -1,0 +1,25 @@
+[package]
+name = "rag2-decision"
+description = "Decision models over HTTP for RAG2: System One servers (Liquid AI d1 on llama.cpp) and Laya sidecars, with fair admission"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+rag2-core.workspace = true
+rag2-config.workspace = true
+rag2-engine.workspace = true
+serde_json.workspace = true
+reqwest = { workspace = true, features = ["blocking"] }
+parking_lot.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+axum.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

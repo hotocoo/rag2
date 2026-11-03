@@ -25,6 +25,8 @@ rag2-engine = { path = "crates/rag2-engine" }
 rag2-server = { path = "crates/rag2-server" }
 rag2-client = { path = "crates/rag2-client" }
 rag2-laya = { path = "crates/rag2-laya" }
+rag2-decision = { path = "crates/rag2-decision" }
+rag2-modernbert = { path = "crates/rag2-modernbert" }
 rag2-embed = { path = "crates/rag2-embed" }
 rag2-plugins = { path = "crates/rag2-plugins" }
 rag2-connectors = { path = "crates/rag2-connectors" }

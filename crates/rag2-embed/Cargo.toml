@@ -9,14 +9,14 @@ publish.workspace = true
 
 [features]
 default = []
-metal = ["rag2-laya/metal"]
-cuda = ["rag2-laya/cuda"]
+metal = ["rag2-modernbert/metal"]
+cuda = ["rag2-modernbert/cuda"]
 
 [dependencies]
 rag2-core.workspace = true
 rag2-config.workspace = true
 rag2-engine.workspace = true
-rag2-laya.workspace = true
+rag2-modernbert.workspace = true
 candle-core.workspace = true
 candle-nn.workspace = true
 tokenizers.workspace = true

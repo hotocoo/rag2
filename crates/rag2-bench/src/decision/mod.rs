@@ -19,7 +19,7 @@ mod stats;
 use anyhow::{Context, Result, bail};
 use clap::{Parser, ValueEnum};
 use rag2_core::interfaces::DecisionProvider;
-use rag2_laya::systemone::SystemOneHttp;
+use rag2_decision::systemone::SystemOneHttp;
 use serde::Serialize;
 use serde_json::Value;
 use std::path::PathBuf;

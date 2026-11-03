@@ -1,6 +1,6 @@
 //! RAG2's engine with a live d1 server as relevance gate, in both gate modes. Ignored unless
 //! `RAG2_SYSTEMONE` points at llama-server with d1 (`--alias d1-2B`):
-//! `RAG2_SYSTEMONE=http://127.0.0.1:8081 cargo test -p rag2-laya --test live_d1_engine -- --ignored`
+//! `RAG2_SYSTEMONE=http://127.0.0.1:8081 cargo test -p rag2-decision --test live_d1_engine -- --ignored`
 
 use rag2_config::schema::{DecisionGate, DecisionModelConfig, GateMode, Profile};
 use rag2_config::{ConfigManager, FsConfigStore};
@@ -57,7 +57,7 @@ fn engine(endpoint: &str, mode: GateMode, dir: &std::path::Path) -> Arc<Engine> 
     });
     let store = Arc::new(FsConfigStore::open(dir.join("config")).expect("store"));
     let cfg = Arc::new(ConfigManager::open(store, "live", None, move || p, 2).expect("config"));
-    Engine::open(cfg, vec![Arc::new(rag2_laya::adapter::LayaFactory)]).expect("engine")
+    Engine::open(cfg, vec![Arc::new(rag2_decision::DecisionFactory)]).expect("engine")
 }
 
 fn gated_ids(mode: GateMode) -> Option<Vec<String>> {

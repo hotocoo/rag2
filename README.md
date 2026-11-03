@@ -40,8 +40,8 @@ Pick the one that matches your application; each is one step.
 | Any other server or language | Run the sidecar (`rag2 serve`, `docker compose up`, Helm, systemd: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)) and call REST ([OpenAPI](docs/openapi.json)), gRPC ([proto](crates/rag2-server/proto/rag2.proto)) or the [TypeScript SDK](sdks/typescript) |
 | An AI agent / IDE | Point it at the MCP endpoint (`POST /mcp`) or the stdio bridge ([docs/INTEGRATIONS.md](docs/INTEGRATIONS.md)) |
 
-Cargo features keep the build to what you use: `models` (candle and HTTP embedders, d1 and Laya
-decision models), `plugins` (Wasmtime), `server` (HTTP/gRPC API), `client` (Rust client),
+Cargo features keep the build to what you use: `decision` (d1 and Laya over HTTP, no candle),
+`models` (`decision` plus candle and HTTP embedders and in-process Laya), `plugins` (Wasmtime), `server` (HTTP/gRPC API), `client` (Rust client),
 `metal` / `cuda`. `default-features = false` gives the engine alone. Behavior (retrievers,
 routing, gates, limits, auth) is set in the profile, never in code.
 
@@ -103,7 +103,9 @@ Numbers come only from the reproducible harness in `crates/rag2-bench`; see
 | `rag2-vector` | Flat and HNSW vector indexes |
 | `rag2-engine` | Ingestion and the retrieval pipeline |
 | `rag2-embed` | HTTP and candle embedders |
-| `rag2-laya` | Decision models: Laya in-process, Laya and System One (d1) over HTTP |
+| `rag2-decision` | Decision models over HTTP: d1 (System One on llama.cpp), Laya sidecars; fair admission |
+| `rag2-laya` | In-process Laya checkpoints (candle) |
+| `rag2-modernbert` | ModernBERT encoder on candle with fused CPU kernels |
 | `rag2-server` | HTTP service, auth, RBAC, rate limits, audit, metrics |
 | `rag2-client` | Rust SDK |
 | `rag2` | One-dependency facade: `open`, `router`, feature-gated components |
@@ -114,5 +116,5 @@ Status and roadmap: [docs/STATUS.md](docs/STATUS.md).
 
 ## License
 
-Apache-2.0. The ModernBERT encoder in `rag2-laya` is adapted from candle-transformers (MIT OR
-Apache-2.0).
+Apache-2.0. The ModernBERT encoder in `rag2-modernbert` is adapted from candle-transformers (MIT
+OR Apache-2.0).

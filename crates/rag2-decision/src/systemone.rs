@@ -314,7 +314,7 @@ mod tests {
     }
 
     /// Live d1 server, e.g. `llama-server -m d1-2B-Q8_0.gguf --alias d1-2B -np 8`, then
-    /// `RAG2_SYSTEMONE=http://127.0.0.1:8081 cargo test -p rag2-laya systemone -- --ignored`.
+    /// `RAG2_SYSTEMONE=http://127.0.0.1:8081 cargo test -p rag2-decision systemone -- --ignored`.
     fn live() -> Option<SystemOneHttp> {
         let ep = std::env::var("RAG2_SYSTEMONE").ok()?;
         Some(SystemOneHttp::new("d1", &ep, "d1-2B", Duration::from_secs(60), 4).expect("client"))

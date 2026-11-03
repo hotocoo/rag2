@@ -16,8 +16,18 @@ flowchart LR
   E --> V[rag2-vector: flat / HNSW per tenant x embedder]
   E --> M[Components: embedders, decision models]
   M --> H[rag2-embed: HTTP, candle]
-  M --> Y[rag2-laya: Laya local / sidecar]
+  M --> D[rag2-decision: d1 System One, Laya sidecar]
+  M --> Y[rag2-laya: Laya in-process]
+  H --> B[rag2-modernbert]
+  Y --> B
+  F[rag2 facade: open, router, features] --> E
+  F --> Edge
 ```
+
+Integration points: `rag2::open(dir)` embeds the engine; `rag2::router(engine)` mounts the HTTP
+API into an existing axum/tower server; `rag2 serve` runs it standalone (REST, gRPC, MCP).
+Features select components at build time (`decision`, `models`, `plugins`, `server`); the
+profile selects them at run time.
 
 ## Write path
 

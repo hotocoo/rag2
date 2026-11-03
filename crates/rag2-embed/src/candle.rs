@@ -8,7 +8,7 @@ use candle_nn::VarBuilder;
 use rag2_config::schema::{Device as CfgDevice, Pooling};
 use rag2_core::interfaces::Embedder;
 use rag2_core::{Error, Result};
-use rag2_laya::encoder::{Config, ModernBert};
+use rag2_modernbert::{Config, ModernBert};
 use std::path::PathBuf;
 use tokenizers::{PaddingParams, Tokenizer, TruncationParams};
 

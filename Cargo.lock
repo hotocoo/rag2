@@ -3721,6 +3721,7 @@ dependencies = [
  "rag2-client",
  "rag2-config",
  "rag2-core",
+ "rag2-decision",
  "rag2-embed",
  "rag2-engine",
  "rag2-laya",
@@ -3742,9 +3743,9 @@ dependencies = [
  "hdrhistogram",
  "rag2-config",
  "rag2-core",
+ "rag2-decision",
  "rag2-embed",
  "rag2-engine",
- "rag2-laya",
  "rag2-vector",
  "rand 0.10.3",
  "rayon",
@@ -3833,6 +3834,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "rag2-decision"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "parking_lot 0.13.0",
+ "rag2-config",
+ "rag2-core",
+ "rag2-engine",
+ "reqwest",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "rag2-embed"
 version = "0.1.0"
 dependencies = [
@@ -3842,7 +3858,7 @@ dependencies = [
  "rag2-config",
  "rag2-core",
  "rag2-engine",
- "rag2-laya",
+ "rag2-modernbert",
  "reqwest",
  "serde",
  "serde_json",
@@ -3877,20 +3893,15 @@ dependencies = [
 name = "rag2-laya"
 version = "0.1.0"
 dependencies = [
- "axum",
  "candle-core",
  "candle-nn",
- "parking_lot 0.13.0",
  "rag2-config",
  "rag2-core",
+ "rag2-decision",
  "rag2-engine",
- "rayon",
- "reqwest",
- "serde",
+ "rag2-modernbert",
  "serde_json",
- "tempfile",
  "tokenizers",
- "tokio",
  "tracing",
 ]
 
@@ -3903,6 +3914,16 @@ dependencies = [
  "tantivy",
  "tempfile",
  "tracing",
+]
+
+[[package]]
+name = "rag2-modernbert"
+version = "0.1.0"
+dependencies = [
+ "candle-core",
+ "candle-nn",
+ "rayon",
+ "serde",
 ]
 
 [[package]]

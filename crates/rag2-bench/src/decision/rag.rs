@@ -11,10 +11,10 @@ use rag2_config::{ConfigManager, FsConfigStore};
 use rag2_core::interfaces::{Answer, DecisionProvider, Question};
 use rag2_core::model::Document;
 use rag2_core::{DocumentId, TenantId};
+use rag2_decision::systemone::SystemOneHttp;
 use rag2_engine::components::ComponentFactory;
 use rag2_engine::query::{joint_relevance_state, relevance_state};
 use rag2_engine::{Engine, QueryRequest};
-use rag2_laya::systemone::SystemOneHttp;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -124,7 +124,7 @@ fn engine(a: &DecisionArgs) -> Result<Arc<Engine>> {
     )?);
     let factories: Vec<Arc<dyn ComponentFactory>> = vec![
         Arc::new(rag2_embed::EmbedFactory),
-        Arc::new(rag2_laya::adapter::LayaFactory),
+        Arc::new(rag2_decision::DecisionFactory),
     ];
     Engine::open(cfg, factories).map_err(Into::into)
 }

@@ -8,7 +8,7 @@ use super::stats::{Latency, Threshold, auroc, fan_out, latency, threshold_for_pr
 use crate::retrieval::{ece, read_jsonl};
 use anyhow::{Context, Result};
 use rag2_core::interfaces::{Answer, ChoiceOption, DecisionProvider, Question};
-use rag2_laya::systemone::{SystemOneHttp, parse_answers};
+use rag2_decision::systemone::{SystemOneHttp, parse_answers};
 use serde::Serialize;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap};

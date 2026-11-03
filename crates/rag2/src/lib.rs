@@ -38,11 +38,14 @@ pub const CONFIG_DIR: &str = "config";
 /// Storage and indexes, under the directory given to [`open`], unless the profile names another.
 pub const DATA_DIR: &str = "data";
 
-/// Every component factory compiled in: the built-in hash embedder always; candle/HTTP embedders
-/// and d1/Laya decision models with `models`; Wasm plugins with `plugins`.
+/// Every component factory compiled in: the built-in hash embedder always; d1 and Laya HTTP
+/// decision models with `decision`; candle/HTTP embedders and in-process Laya with `models`; Wasm
+/// plugins with `plugins`.
 pub fn factories() -> Vec<Arc<dyn ComponentFactory>> {
     #[allow(unused_mut)]
     let mut f: Vec<Arc<dyn ComponentFactory>> = Vec::new();
+    #[cfg(feature = "decision")]
+    f.push(Arc::new(rag2_decision::DecisionFactory));
     #[cfg(feature = "models")]
     {
         f.push(Arc::new(rag2_embed::EmbedFactory));

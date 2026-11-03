@@ -1,6 +1,6 @@
 [package]
 name = "rag2-laya"
-description = "Decision models for RAG2: in-process Laya checkpoints on candle, Laya and System One (d1) HTTP adapters"
+description = "In-process Laya decision checkpoints for RAG2, on candle"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -10,28 +10,21 @@ publish.workspace = true
 [features]
 default = []
 # Apple GPU (Metal) and Accelerate BLAS.
-metal = ["candle-core/metal", "candle-core/accelerate", "candle-nn/metal", "candle-nn/accelerate"]
+metal = ["rag2-modernbert/metal", "candle-core/metal", "candle-core/accelerate", "candle-nn/metal", "candle-nn/accelerate"]
 # NVIDIA GPU.
-cuda = ["candle-core/cuda", "candle-nn/cuda"]
+cuda = ["rag2-modernbert/cuda", "candle-core/cuda", "candle-nn/cuda"]
 
 [dependencies]
 rag2-core.workspace = true
 rag2-config.workspace = true
 rag2-engine.workspace = true
+rag2-decision.workspace = true
+rag2-modernbert.workspace = true
 candle-core.workspace = true
 candle-nn.workspace = true
 tokenizers.workspace = true
-serde.workspace = true
 serde_json.workspace = true
-rayon.workspace = true
-reqwest = { workspace = true, features = ["blocking"] }
-parking_lot.workspace = true
 tracing.workspace = true
-
-[dev-dependencies]
-tempfile.workspace = true
-tokio.workspace = true
-axum.workspace = true
 
 [lints]
 workspace = true

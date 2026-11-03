@@ -4,7 +4,9 @@
 fn main() -> rag2::Result<()> {
     let mut args = std::env::args().skip(1);
     let dir = args.next().unwrap_or_else(|| "./rag2-data".into());
-    let question = args.next().unwrap_or_else(|| "what is in these documents?".into());
+    let question = args
+        .next()
+        .unwrap_or_else(|| "what is in these documents?".into());
     let rag = rag2::open(&dir)?;
     let tenant = rag2::TenantId::new("example")?;
     let files = std::env::var("RAG2_EXAMPLE_FILES").unwrap_or_default();
@@ -25,6 +27,9 @@ fn main() -> rag2::Result<()> {
     for e in &r.evidence {
         println!("[{}] {:.3} {}", e.provenance.doc_id, e.score, e.text);
     }
-    println!("confidence {:.2}, abstained: {:?}", r.confidence, r.abstained);
+    println!(
+        "confidence {:.2}, abstained: {:?}",
+        r.confidence, r.abstained
+    );
     Ok(())
 }
