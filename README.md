@@ -41,7 +41,7 @@ Pick the one that matches your application; each is one step.
 | An AI agent / IDE | Point it at the MCP endpoint (`POST /mcp`) or the stdio bridge ([docs/INTEGRATIONS.md](docs/INTEGRATIONS.md)) |
 
 Cargo features keep the build to what you use: `decision` (d1 and Laya over HTTP, no candle),
-`models` (`decision` plus candle and HTTP embedders and in-process Laya), `plugins` (Wasmtime), `server` (HTTP/gRPC API), `client` (Rust client),
+`models` (`decision` plus candle and HTTP embedders and in-process Laya), `plugins` (Wasmtime), `server` (HTTP API), `grpc` (adds gRPC; needs `protoc` to build), `client` (Rust client),
 `metal` / `cuda`. `default-features = false` gives the engine alone. Behavior (retrievers,
 routing, gates, limits, auth) is set in the profile, never in code.
 
@@ -95,8 +95,8 @@ Numbers come only from the reproducible harness in `crates/rag2-bench`; see
 - Decision model under extreme load ([decision-d1.md](docs/benchmarks/decision-d1.md)): Liquid AI
   d1-2B Q8_0 on llama.cpp, M4 Max. 0.667 three-way accuracy on 5,540 real NLI / claim items
   (ANLI R3 0.514, XNLI en 0.845, SciFact 0.797; ECE 0.033); as RAG2's reranker nDCG@5 0.434 to
-  0.530 on SciFact; gated query p99 4.0 s at 32 concurrent users with the stage deadline
-  (41.4 s without).
+  0.530 on SciFact; gated query p99 4.0 s at 32 concurrent users with the stage deadline and a
+  2 s decision timeout (41.4 s with per-call 10 s timeouts).
 - Retrieval quality and latency on SciFact: [retrieval.md](docs/benchmarks/retrieval.md).
 - Vector indexes: [vector-index.md](docs/benchmarks/vector-index.md).
 

@@ -19,7 +19,8 @@ models = ["decision", "dep:rag2-embed", "dep:rag2-laya"]
 plugins = ["dep:rag2-plugins"]
 # The HTTP API as a mountable axum Router.
 server = ["dep:rag2-server", "dep:axum"]
-# gRPC is on with `server` (rag2-server default; needs protoc at build time).
+# gRPC alongside HTTP (needs protoc at build time).
+grpc = ["server", "rag2-server/grpc"]
 # Rust client for a remote RAG2.
 client = ["dep:rag2-client"]
 metal = ["models", "rag2-laya/metal", "rag2-embed/metal"]
@@ -33,7 +34,7 @@ rag2-embed = { workspace = true, optional = true }
 rag2-laya = { workspace = true, optional = true }
 rag2-decision = { workspace = true, optional = true }
 rag2-plugins = { workspace = true, optional = true }
-rag2-server = { workspace = true, optional = true }
+rag2-server = { path = "../rag2-server", optional = true, default-features = false }
 rag2-client = { workspace = true, optional = true }
 axum = { workspace = true, optional = true }
 serde_json.workspace = true

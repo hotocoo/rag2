@@ -151,7 +151,8 @@ setting: one request in flight.
   between relevant and hard-negative passages.
 - `joint` (all passages in one state, one question each) gives the same quality but is 3x slower
   on llama.cpp, which reads the whole state once per question (finding 4 above). `per_item`
-  stays the default; `joint` is for servers that read the state once.
+  stays the default. No other System One server was tested, so no speed claim is made for
+  `joint` elsewhere.
 - At `min_confidence: 0.7` the gate keeps 65% of relevant passages and removes 96% of
   irrelevant ones: too aggressive for recall-sensitive use. The threshold sweep below sets the
   shipped default.
@@ -221,7 +222,11 @@ Gate `min_confidence: 0.9`, d1 `timeout_ms: 2000`. Raw:
 | gated_joint | 32 | yes | 2,003 | 4,006 | 4,006 | 4,006 | 8.3 | 66 | 0 |
 
 - p99 at 32 concurrent users drops from 41.4 s to 4.0 s, the configured bound (relevance stage
-  plus contradiction stage, 2 s each), with zero errors, during concurrent re-ingest too.
+  plus contradiction stage, 2 s each), with zero errors, during concurrent re-ingest too. Two
+  things changed together: the shared stage deadline and the timeout (10 s per call before,
+  2 s per stage after); with the stage deadline at 10 s the bound would be about 20 s.
+- Abstentions fall from 28-32 to 0-13 for two reasons: the 0.9 gate keeps more passages than
+  0.7 did, and under overload the gate fails open so every retrieved passage is kept.
 - The cost is explicit: beyond about 1.5 gated queries/s per d1 server, the gate is skipped
   for the excess and responses carry `decision model d1 failed (... saturated ...)` warnings.
   Evidence is never dropped by an unavailable gate.
@@ -236,4 +241,4 @@ Gate `min_confidence: 0.9`, d1 `timeout_ms: 2000`. Raw:
 | Is it confused by option order? | No: 0.977-1.000 agreement when options are reversed |
 | Does it help RAG2? | Yes: reranking lifts SciFact nDCG@5 0.434 to 0.530 (+22%), AUROC 0.94 |
 | What limits it? | llama.cpp 0.8.0 serves one call at a time, ~0.39 ms per input token on M4 Max; queued requests starve (p99 49 s at 8 clients) |
-| What does RAG2 do about it? | FIFO admission with 1 in flight, one deadline per decision stage, fail-open gates: p99 4.0 s at 32 users |
+| What does RAG2 do about it? | FIFO admission with 1 in flight, one 2 s deadline per decision stage, fail-open gates: p99 4.0 s at 32 users |

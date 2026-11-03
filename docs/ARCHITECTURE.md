@@ -117,6 +117,7 @@ confidence in [0, 1], one answer per question) and an unavailable or unsure mode
   RAG2. A stage that asks about several passages shares one deadline (`timeout_ms`, queueing
   included); unanswered items fail open. Measured in docs/benchmarks/decision-d1.md.
 - Gate `mode`: `per_item` (one call per passage, default) or `joint` (all passages in one state,
-  one question each; only faster on servers that read a state once per call).
+  one question each). Measured on llama.cpp 0.8.0: same quality, 3x slower; no other System One
+  server has been tested.
 - `laya_http` / `laya_local`: Laya checkpoints over HTTP or in-process on candle. The in-process
   runtime's numerical behavior is untested without a checkpoint (`RAG2_LAYA_CHECKPOINT`).
