@@ -64,13 +64,25 @@ Resume point for any new working session. Update the checkboxes as work lands.
 
 ## Known gaps (unmeasured or unbuilt, not hidden)
 
-- Test coverage has not been measured (`cargo llvm-cov` not installed here); 146 tests pass.
-- The console has no automated tests; it was verified manually in Chrome (login, pipeline edit
-  -> preview -> apply, playground, connectors build).
-- ModernBERT calibration coefficients not yet fitted (calibration measured with hash runs only).
+- Coverage: see "Coverage" below (measured with cargo-llvm-cov, live model tests included).
+- The console has no automated tests; verified in Chrome (login, pipeline edit -> preview ->
+  apply, playground, connectors build) and served with d1 on 2026-11-03.
 - Laya numerical parity on candle 0.11 unmeasured (no checkpoint on this machine).
 - No automatic failover; promotion is orchestrator/operator driven by design.
+- llama.cpp 0.8.0 serializes d1 calls and re-reads the state per question: decision throughput
+  is about 1 / (0.39 ms x input tokens) per server. Scale d1 by running more servers (one
+  decision model entry each), not more slots.
 - CI cold builds compile candle + wasmtime: expect 10+ minutes for the test job.
+
+## Integration (2026-11-03)
+
+- `rag2` facade crate: `rag2::open(dir)`, `open_with_profile(_text)`, `rag2::router(engine)`
+  (mount into any axum/tower app), `rag2::factories()`; features `decision`, `models`,
+  `plugins`, `server`, `client`, `metal`, `cuda`. Examples: crates/rag2/examples.
+- Crates split for modular builds: `rag2-decision` (d1 System One + Laya HTTP, FIFO admission,
+  no candle), `rag2-modernbert` (encoder + fused kernels), `rag2-laya` (in-process Laya only).
+- One-command d1 stack: `docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.d1.yml up`.
+- Evaluation of d1-2B Q8_0 under extreme load: docs/benchmarks/decision-d1.md.
 
 ## Phases
 

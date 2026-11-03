@@ -36,6 +36,22 @@ pub enum Suite {
     E2e,
 }
 
+/// `rag2_config::schema::GateMode` on the command line.
+#[derive(Clone, Copy, ValueEnum, PartialEq, Debug)]
+pub enum Mode {
+    PerItem,
+    Joint,
+}
+
+impl From<Mode> for rag2_config::schema::GateMode {
+    fn from(m: Mode) -> Self {
+        match m {
+            Mode::PerItem => Self::PerItem,
+            Mode::Joint => Self::Joint,
+        }
+    }
+}
+
 #[derive(Parser, Clone)]
 pub struct DecisionArgs {
     /// Suites to run, comma separated.
@@ -93,8 +109,23 @@ pub struct DecisionArgs {
     #[arg(long, default_value = "cpu")]
     device: String,
     /// Relevance/e2e: min_confidence of the d1 relevance gate and contradiction check.
-    #[arg(long, default_value_t = 0.7)]
+    #[arg(long, default_value_t = 0.9)]
     gate_min_confidence: f32,
+    /// Relevance: gate min_confidence levels to evaluate.
+    #[arg(
+        long,
+        value_delimiter = ',',
+        default_value = "0.6,0.7,0.8,0.9,0.95,0.99"
+    )]
+    gate_sweep: Vec<f64>,
+    /// Relevance: gate modes to compare.
+    #[arg(
+        long,
+        value_enum,
+        value_delimiter = ',',
+        default_value = "per-item,joint"
+    )]
+    gate_modes: Vec<Mode>,
     /// E2E: concurrent query threads to sweep.
     #[arg(long, value_delimiter = ',', default_value = "1,4,16,32")]
     e2e_threads: Vec<usize>,

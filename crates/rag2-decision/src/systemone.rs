@@ -142,6 +142,40 @@ impl SystemOneHttp {
     }
 }
 
+impl SystemOneHttp {
+    /// One call that must finish, queueing included, by `deadline`.
+    fn decide_by(
+        &self,
+        state: &str,
+        questions: &[Question],
+        deadline: Instant,
+    ) -> Result<Vec<Answer>> {
+        let unavailable = |e: String| Error::Unavailable(format!("{}: {e}", self.label));
+        let _permit = self.limiter.acquire(deadline).ok_or_else(|| {
+            unavailable(format!(
+                "saturated: no free slot within {} ms",
+                self.timeout.as_millis()
+            ))
+        })?;
+        let resp = self
+            .http
+            .post(format!("{}/v1/systemone", self.endpoint))
+            .timeout(deadline.saturating_duration_since(Instant::now()))
+            .json(&request_json(state, questions))
+            .send()
+            .map_err(|e| unavailable(e.to_string()))?;
+        let status = resp.status();
+        let v: Value = resp.json().map_err(|e| unavailable(e.to_string()))?;
+        if !status.is_success() {
+            return Err(unavailable(format!(
+                "refused ({status}): {}",
+                v["error"]["message"].as_str().unwrap_or("unknown")
+            )));
+        }
+        parse_answers(&v, questions)
+    }
+}
+
 impl DecisionProvider for SystemOneHttp {
     fn name(&self) -> &str {
         &self.label
@@ -167,40 +201,23 @@ impl DecisionProvider for SystemOneHttp {
     }
 
     fn decide(&self, state: &str, questions: &[Question]) -> Result<Vec<Answer>> {
-        let unavailable = |e: String| Error::Unavailable(format!("{}: {e}", self.label));
-        // One deadline for queueing and the request together.
-        let deadline = Instant::now() + self.timeout;
-        let _permit = self.limiter.acquire(deadline).ok_or_else(|| {
-            unavailable(format!(
-                "saturated: no free slot within {} ms",
-                self.timeout.as_millis()
-            ))
-        })?;
-        let resp = self
-            .http
-            .post(format!("{}/v1/systemone", self.endpoint))
-            .timeout(deadline.saturating_duration_since(Instant::now()))
-            .json(&request_json(state, questions))
-            .send()
-            .map_err(|e| unavailable(e.to_string()))?;
-        let status = resp.status();
-        let v: Value = resp.json().map_err(|e| unavailable(e.to_string()))?;
-        if !status.is_success() {
-            return Err(unavailable(format!(
-                "refused ({status}): {}",
-                v["error"]["message"].as_str().unwrap_or("unknown")
-            )));
-        }
-        parse_answers(&v, questions)
+        self.decide_by(state, questions, Instant::now() + self.timeout)
     }
 
     /// Up to `concurrency` requests in flight (shared with every other caller); results keep the
-    /// order of `states`.
+    /// order of `states`. The whole batch shares one deadline (`timeout_ms` from now), so a stage
+    /// asking about many passages is bounded by one timeout, not one per passage; what is still
+    /// unanswered then fails (and the caller's gate fails open).
     fn decide_each(&self, states: &[String], questions: &[Question]) -> Vec<Result<Vec<Answer>>> {
+        let deadline = Instant::now() + self.timeout;
         let workers = self.concurrency.min(states.len());
         if workers <= 1 {
-            return states.iter().map(|s| self.decide(s, questions)).collect();
+            return states
+                .iter()
+                .map(|s| self.decide_by(s, questions, deadline))
+                .collect();
         }
+
         let next = AtomicUsize::new(0);
         let mut done: Vec<(usize, Result<Vec<Answer>>)> = std::thread::scope(|sc| {
             let handles: Vec<_> = (0..workers)
@@ -210,7 +227,7 @@ impl DecisionProvider for SystemOneHttp {
                         loop {
                             let i = next.fetch_add(1, Ordering::Relaxed);
                             let Some(s) = states.get(i) else { break };
-                            mine.push((i, self.decide(s, questions)));
+                            mine.push((i, self.decide_by(s, questions, deadline)));
                         }
                         mine
                     })
@@ -354,6 +371,32 @@ mod tests {
             .collect();
         let want: Vec<bool> = (0..16).map(|i| i % 2 == 0).collect();
         assert_eq!(yes, want);
+    }
+
+    /// A stage asking about many passages is bounded by one timeout, not one per passage.
+    #[test]
+    #[ignore = "needs RAG2_SYSTEMONE (a live d1 server)"]
+    fn live_d1_batch_shares_one_deadline() {
+        let Ok(ep) = std::env::var("RAG2_SYSTEMONE") else {
+            return;
+        };
+        let budget = Duration::from_millis(400);
+        let m = SystemOneHttp::new("d1", &ep, "d1-2B", budget, 1).expect("client");
+        let q = [Question::YesNo {
+            instructions: "Does the message ask for a refund?".into(),
+        }];
+        let states: Vec<String> = (0..30)
+            .map(|i| format!("Order {i}: I was charged twice, please refund me."))
+            .collect();
+        let started = Instant::now();
+        let out = m.decide_each(&states, &q);
+        let took = started.elapsed();
+        // One in-flight request may finish after the deadline; nothing else may.
+        assert!(took < budget * 3, "took {took:?}");
+        assert!(
+            out.iter().any(|r| r.is_err()),
+            "30 calls cannot fit in 400 ms"
+        );
     }
 
     #[test]

@@ -54,7 +54,31 @@ pub struct RelevanceReport {
     gate_removes_irrelevant: f64,
     gate_min_confidence: f32,
     threshold_for_target: Option<Threshold>,
+    /// What the gate would keep and remove at each candidate `min_confidence`.
+    gate_sweep: Vec<GatePoint>,
     call_latency: Latency,
+}
+
+#[derive(Serialize)]
+pub struct GatePoint {
+    min_confidence: f64,
+    keeps_relevant: f64,
+    removes_irrelevant: f64,
+}
+
+/// A passage is dropped when the model says no with at least `m` confidence: P(yes) <= 1 - m.
+fn gate_sweep(scored: &[(f64, bool)], levels: &[f64]) -> Vec<GatePoint> {
+    let rel = scored.iter().filter(|s| s.1).count().max(1) as f64;
+    let irr = scored.iter().filter(|s| !s.1).count().max(1) as f64;
+    levels
+        .iter()
+        .map(|&m| GatePoint {
+            min_confidence: m,
+            keeps_relevant: scored.iter().filter(|s| s.1 && s.0 > 1.0 - m).count() as f64 / rel,
+            removes_irrelevant: scored.iter().filter(|s| !s.1 && s.0 <= 1.0 - m).count() as f64
+                / irr,
+        })
+        .collect()
 }
 
 #[derive(Serialize)]
@@ -181,9 +205,9 @@ pub fn run(a: &DecisionArgs, m: &SystemOneHttp, relevance: bool, e2e: bool) -> R
     let rel = relevance
         .then(|| -> Result<Vec<RelevanceReport>> {
             let c = candidates(a, &engine, &t, &eval)?;
-            [GateMode::PerItem, GateMode::Joint]
-                .into_iter()
-                .map(|mode| judge_mode(a, m, &eval, &c, mode))
+            a.gate_modes
+                .iter()
+                .map(|&mode| judge_mode(a, m, &eval, &c, mode.into()))
                 .collect()
         })
         .transpose()?;
@@ -350,6 +374,7 @@ fn judge_mode(
         gate_removes_irrelevant: drop_irr as f64 / n_irr.max(1) as f64,
         gate_min_confidence: a.gate_min_confidence,
         threshold_for_target: threshold_for_precision(&scored, a.target_precision),
+        gate_sweep: gate_sweep(&scored, &a.gate_sweep),
         call_latency: latency(&call_us)?,
     };
     eprintln!(

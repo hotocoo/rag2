@@ -23,7 +23,7 @@ decision_models:
     kind: system_one
     endpoint: http://d1:8081
     serve_id: d1-2B
-    timeout_ms: 10000
+    timeout_ms: 2000                # per decision stage, queueing included; then fail open
     concurrency: 1
 pipelines:
   default:
@@ -43,9 +43,9 @@ pipelines:
     relevance_gate:
       model: d1
       instructions: Does the passage contain information that answers the query?
-      min_confidence: 0.7
+      min_confidence: 0.9
     contradiction:
       decision:
         model: d1
         instructions: Do the two passages make claims that contradict each other?
-        min_confidence: 0.7
+        min_confidence: 0.9
