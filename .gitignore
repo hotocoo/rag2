@@ -7,3 +7,4 @@ bench-data/
 console/dist/
 examples/plugins/*/target/
 *.log
+.serena/

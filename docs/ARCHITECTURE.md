@@ -94,11 +94,15 @@ that rebuild components and authenticators. A failed activation changes nothing.
 A new embedder or decision model is a `ComponentFactory` plus a config variant; nothing else
 changes.
 
-## Laya
+## Decision models
 
-`rag2-laya` vendors aletheia-laya's runtime (`lib.rs`, `model.rs`, `encoder.rs`, `fused.rs`)
-unchanged apart from the candle 0.11 API, with its unit tests as the parity contract for
-tokenization layout, calibration and answer formatting. The adapter maps RAG2 questions to the
-decision wire and validates answers. Laya's role is unchanged: typed `choice`/`yesno` questions
-in, calibrated answers out. Numerical parity with candle 0.9.1 is unmeasured until a checkpoint is
-available (`RAG2_LAYA_CHECKPOINT`).
+A decision model answers typed `choice`/`yesno` questions over a state with calibrated
+confidence, in one forward pass and without generating text. RAG2 asks one to pick a route, to
+gate relevance and to confirm contradictions; every answer is validated (offered labels only,
+confidence in [0, 1], one answer per question) and an unavailable or unsure model falls back.
+
+- `system_one`: a System One server such as Liquid AI d1 on llama.cpp (`POST /v1/systemone`).
+  Questions over several states (one per passage or passage pair) run concurrently up to
+  `concurrency`, which should match the server's `-np` slots.
+- `laya_http` / `laya_local`: Laya checkpoints over HTTP or in-process on candle. The in-process
+  runtime's numerical behavior is untested without a checkpoint (`RAG2_LAYA_CHECKPOINT`).

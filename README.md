@@ -37,14 +37,14 @@ The OpenAPI 3.1 document is served at `/v1/openapi.json` (or `rag2 openapi`).
 | Lexical BM25 (Tantivy), language tokenizers | `indexes.lexical` |
 | Structured retrieval and metadata filters | request `filters`, `structured` retriever |
 | Graph expansion (adjacent chunks, linked documents) | `pipelines.*.graph` |
-| Routing: all, rules over query features, or a decision model (Laya) | `pipelines.*.routing` |
+| Routing: all, rules over query features, or a decision model (d1, Laya) | `pipelines.*.routing` |
 | Multi-hop retrieval with salient-term expansion | `pipelines.*.multi_hop` |
 | Fusion: reciprocal rank or weighted normalized scores | `pipelines.*.fusion` |
 | Near-duplicate collapse, contradiction screening (negation, numeric, optional model check) | `dedup`, `contradiction` |
 | Calibrated confidence and abstention | `calibration`, `abstention` |
 | Context assembly with citations and budgets | `context` |
 | Embedders: hash baseline, local ModernBERT on candle, any OpenAI-compatible API | `embedders` |
-| Decision models: Laya in-process or as a sidecar | `decision_models` |
+| Decision models: Liquid AI d1 on llama.cpp (System One), Laya in-process or as a sidecar | `decision_models` |
 | Incremental ingestion (content hash), atomic per request | automatic |
 
 Every response carries provenance (document, version, chunk, byte span, source), per-retriever
@@ -87,7 +87,7 @@ Numbers come only from the reproducible harness in `crates/rag2-bench`; see
 | `rag2-vector` | Flat and HNSW vector indexes |
 | `rag2-engine` | Ingestion and the retrieval pipeline |
 | `rag2-embed` | HTTP and candle embedders |
-| `rag2-laya` | Faithful Laya adapter (ported from aletheia-laya) |
+| `rag2-laya` | Decision models: Laya in-process, Laya and System One (d1) over HTTP |
 | `rag2-server` | HTTP service, auth, RBAC, rate limits, audit, metrics |
 | `rag2-client` | Rust SDK |
 | `rag2-cli` | The `rag2` binary |
@@ -97,5 +97,5 @@ Status and roadmap: [docs/STATUS.md](docs/STATUS.md).
 
 ## License
 
-Apache-2.0. `rag2-laya` contains code ported from aletheia-laya (MIT) and candle (MIT OR
-Apache-2.0); see the crate header.
+Apache-2.0. The ModernBERT encoder in `rag2-laya` is adapted from candle-transformers (MIT OR
+Apache-2.0).

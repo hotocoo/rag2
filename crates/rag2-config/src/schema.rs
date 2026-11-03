@@ -74,6 +74,7 @@ defaults! {
     chunk_cache: u64 = d::CHUNK_CACHE_ENTRIES;
     doc_cache: u64 = d::DOCUMENT_CACHE_ENTRIES;
     decision_timeout_ms: u64 = d::DECISION_HTTP_TIMEOUT_MS;
+    decision_concurrency: usize = d::DECISION_CONCURRENCY;
     tenant_rps: u32 = d::TENANT_REQUESTS_PER_SECOND;
     tenant_burst: u32 = d::TENANT_BURST;
     tenant_max_docs: u64 = d::TENANT_MAX_DOCUMENTS;
@@ -483,6 +484,18 @@ pub enum DecisionModelConfig {
         serve_id: String,
         #[serde(default = "decision_timeout_ms")]
         timeout_ms: u64,
+    },
+    /// A System One decision server (Liquid AI d1 on llama.cpp: `POST /v1/systemone`).
+    /// `serve_id` must appear in the server's `GET /v1/models` list.
+    SystemOne {
+        endpoint: String,
+        serve_id: String,
+        #[serde(default = "decision_timeout_ms")]
+        timeout_ms: u64,
+        /// Requests in flight at once when a stage asks several questions (relevance gate,
+        /// contradiction checks). Match the server's parallel slots (`llama-server -np`).
+        #[serde(default = "decision_concurrency")]
+        concurrency: usize,
     },
 }
 

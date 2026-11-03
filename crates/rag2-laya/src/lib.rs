@@ -1,24 +1,17 @@
-//! Laya decision checkpoints for RAG2, ported from `aletheia-laya` 0.8.0 (MIT, Aletheia
-//! `aletheia-laya/src/{lib,model,encoder,fused}.rs`). The model code below is that runtime
-//! unchanged except for the candle 0.11 API; [`adapter`] is the RAG2 side: it exposes the
-//! checkpoint as a [`rag2_core::interfaces::DecisionProvider`] and adds nothing to what Laya does.
-//!
-//! Original crate documentation follows.
-//!
-//! The native System-1 runtime for Laya decision checkpoints (ADR-241).
+//! RAG2's in-process runtime for Laya decision checkpoints, on candle, plus the decision adapters
+//! ([`adapter`] for Laya, [`systemone`] for System One servers such as Liquid AI d1 on llama.cpp).
+//! Each exposes a [`rag2_core::interfaces::DecisionProvider`].
 //!
 //! Laya is a non-autoregressive decision model: a ModernBERT encoder, a two-layer transformer head,
-//! and a scorer that reads one hidden state per option. The reference runtime is Python (`pip
-//! install laya`, torch). This crate runs the same checkpoint with candle and answers the Aletheia
-//! decision wire (`POST /v1/decide`, ADR-186), so the backend ships as one binary with no
-//! interpreter and no framework install. Parity with the reference is measured, not assumed
-//! (`scripts/system1/native_parity.py`, numbers in ADR-241).
+//! and a scorer that reads one hidden state per option. This crate runs a checkpoint with candle
+//! and answers the decision wire (`POST /v1/decide`), so the backend ships as one binary with no
+//! interpreter and no framework install.
 //!
 //! The pieces that decide an answer without a model are separate and tested on their own:
-//! [`sequence`] (how a question and its options become tokens, `laya.common.build_sequence`),
-//! [`temperature`] and [`answer`] (calibration and confidence).
+//! [`sequence`] (how a question and its options become tokens), [`temperature`] and [`answer`]
+//! (calibration and confidence).
 
-// The vendored tests are kept verbatim from aletheia-laya, including their `unwrap()`s.
+// These unit tests use `unwrap()` for brevity.
 #![cfg_attr(test, allow(clippy::unwrap_used))]
 
 use serde_json::{Value, json};
@@ -201,6 +194,7 @@ pub mod adapter;
 pub mod encoder;
 pub mod fused;
 pub mod model;
+pub mod systemone;
 
 #[cfg(test)]
 mod tests {

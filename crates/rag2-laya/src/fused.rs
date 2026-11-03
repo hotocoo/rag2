@@ -1,4 +1,4 @@
-//! Fused CPU kernels for the encoder's hot elementwise path (ADR-249).
+//! Fused CPU kernels for the encoder's hot elementwise path.
 //!
 //! `docs/evidence/system1/native-profile-2026-10-08.md` found 40 % of a decision's CPU time in
 //! candle's elementwise ops and its scalar `erf`, not in matrix multiplication. The encoder's GeGLU
@@ -33,7 +33,7 @@ struct GeGlu;
 
 impl CustomOp1 for GeGlu {
     fn name(&self) -> &'static str {
-        "aletheia-geglu"
+        "rag2-geglu"
     }
 
     fn cpu_fwd(&self, storage: &CpuStorage, layout: &Layout) -> Result<(CpuStorage, Shape)> {
@@ -67,7 +67,7 @@ impl CustomOp1 for GeGlu {
     }
 }
 
-/// `softmax(att * scale + mask)` over the last dimension in one parallel pass (ADR-249). `att` is
+/// `softmax(att * scale + mask)` over the last dimension in one parallel pass. `att` is
 /// (batch, heads, L, L); `mask` is additive, (batch, 1, L, L), shared by every head.
 pub fn masked_softmax(att: &Tensor, mask: &Tensor, scale: f32) -> Result<Tensor> {
     let (b, h, l, k) = att.dims4()?;
@@ -99,7 +99,7 @@ struct MaskedSoftmax {
 
 impl CustomOp1 for MaskedSoftmax {
     fn name(&self) -> &'static str {
-        "aletheia-masked-softmax"
+        "rag2-masked-softmax"
     }
 
     fn cpu_fwd(&self, storage: &CpuStorage, layout: &Layout) -> Result<(CpuStorage, Shape)> {

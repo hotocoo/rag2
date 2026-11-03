@@ -11,7 +11,7 @@ use rag2_engine::components::ComponentFactory;
 use std::sync::Arc;
 use std::time::Duration;
 
-/// The decision wire's request body (Aletheia `request_json`).
+/// The decision wire's request body.
 pub fn request_json(state: &str, questions: &[Question]) -> serde_json::Value {
     serde_json::json!({ "state": state, "questions": questions })
 }
@@ -109,7 +109,7 @@ impl DecisionProvider for LayaHttp {
     }
 
     /// Healthy means something answers AND says it serves the configured model: a port is not a
-    /// model (Aletheia ADR-052).
+    /// model.
     fn healthy(&self) -> bool {
         let Ok(r) = self.http.get(format!("{}/v1/models", self.endpoint)).send() else {
             return false;
@@ -144,7 +144,7 @@ impl DecisionProvider for LayaHttp {
     }
 }
 
-/// Builds Laya decision models from configuration.
+/// Builds decision models from configuration: Laya (local or HTTP) and System One servers.
 pub struct LayaFactory;
 
 impl ComponentFactory for LayaFactory {
@@ -171,6 +171,18 @@ impl ComponentFactory for LayaFactory {
                 endpoint,
                 serve_id,
                 Duration::from_millis(*timeout_ms),
+            )?),
+            DecisionModelConfig::SystemOne {
+                endpoint,
+                serve_id,
+                timeout_ms,
+                concurrency,
+            } => Arc::new(crate::systemone::SystemOneHttp::new(
+                name,
+                endpoint,
+                serve_id,
+                Duration::from_millis(*timeout_ms),
+                *concurrency,
             )?),
         }))
     }
@@ -205,7 +217,7 @@ mod tests {
     }
 
     #[test]
-    fn requests_use_the_aletheia_decision_wire() {
+    fn requests_use_the_laya_decision_wire() {
         let v = request_json("s", &questions());
         assert_eq!(v["state"], "s");
         assert_eq!(v["questions"][0]["type"], "choice");

@@ -86,6 +86,8 @@ pub const DOCUMENT_CACHE_ENTRIES: u64 = 50_000;
 
 // Decision model transport
 pub const DECISION_HTTP_TIMEOUT_MS: u64 = 5_000;
+/// Decision requests in flight per stage; matches a llama-server started with `-np 4`.
+pub const DECISION_CONCURRENCY: usize = 4;
 
 // Tenancy
 pub const TENANT_REQUESTS_PER_SECOND: u32 = 200;

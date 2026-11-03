@@ -1,7 +1,7 @@
 //! The checkpoint itself: ModernBERT encoder (candle's), the two-layer head and the scorer, loaded
 //! from a Laya checkpoint directory (`model.safetensors`, `rl_agent_config.json`, `encoder/`,
 //! `tokenizer/`). Computed in f32 from the checkpoint's f16 weights, as the reference runtime does
-//! on CPU and MPS; f16 compute was measured and rejected (ADR-241).
+//! on CPU and MPS; f16 compute was measured and rejected.
 
 use crate::encoder::{Config, ModernBert};
 use crate::{Encode, Layout, answer, parse_question, sequence, temperature, type_name};

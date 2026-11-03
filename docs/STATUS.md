@@ -2,21 +2,12 @@
 
 Resume point for any new working session. Update the checkboxes as work lands.
 
-## Audit findings (2026-11-02)
+## Decision models
 
-- `rag2/` had no prior code: nothing to migrate from a previous RAG2.
-- Laya source: `../Aletheia/aletheia-laya` (MIT, 1,367 lines, candle 0.9.1). ModernBERT encoder (local fork
-  with fused CPU GeGLU and masked softmax, ADR-249), a 2-layer `norm_first` transformer head, a type
-  embedding (choice / score / noul), and a scorer over each option's `[MASK]` hidden state.
-  Wire: `POST /v1/decide {state, questions:[{type: choice|yesno, instructions, options}]}` ->
-  `{answers:[{label, confidence} | {yes, confidence}]}`. Calibration: per-bucket temperature, entropy
-  confidence. Laya decides typed questions; it does not embed, rank or generate.
-- Aletheia's own manifest marks Laya `status = "unfit"` for its console (1/8 correct). RAG2 ships the
-  adapter only and makes no accuracy or latency claim for it.
-- No Laya checkpoint is on this machine. Checkpoint-dependent tests are `#[ignore]` and run only with
-  `RAG2_LAYA_CHECKPOINT=<dir>`.
-- Policy from the user: every dependency at its latest stable release. Laya moves from candle 0.9.1
-  to 0.11.1. Numerical parity with the 0.9.1 runtime is UNMEASURED until a checkpoint is available.
+- Primary: Liquid AI d1-2B (Q8_0 GGUF) on llama.cpp 0.8.0 (`/v1/systemone`), adapter
+  `SystemOneHttp` (`kind: system_one`). Verified against the live model on 2026-11-03.
+- Laya: in-process candle runtime + HTTP adapter. No Laya checkpoint on this machine, so the
+  in-process path is untested end to end (`RAG2_LAYA_CHECKPOINT`); no accuracy claim is made.
 - embedvec 0.10 default features pull fjall 2.x (conflicts with fjall 3); used with
   `default-features = false`.
 
@@ -42,9 +33,8 @@ Resume point for any new working session. Update the checkboxes as work lands.
 - SDK: `rag2-client` (reqwest). CLI `rag2`: serve, init (profile + keys), config validate/diff/
   apply/rollback/history/export/schema, key api/encryption, openapi, query, ingest (filesystem
   connector with retry/backoff), status. Live E2E verified 2026-11-02.
-- Laya: vendored lib/model/encoder/fused compile unchanged on candle 0.11.1 (only a scoped
-  `#[allow(unsafe_code)]` on the mmap); its 10 unit tests pass; adapter = LayaLocal/LayaHttp +
-  LayaFactory, answers validated. Checkpoint test ignored without RAG2_LAYA_CHECKPOINT.
+- Laya: in-process runtime on candle 0.11.1 (only a scoped `#[allow(unsafe_code)]` on the mmap);
+  10 unit tests pass; adapter = LayaLocal/LayaHttp + LayaFactory, answers validated.
 - Embedders: `rag2-embed` (HTTP OpenAI-compatible, mock-tested; candle ModernBERT via Laya's
   encoder, verified with nomic-ai/modernbert-embed-base forward pass).
 - Replication: per-tenant log written atomically with data on primaries (epoch + seq),
@@ -98,7 +88,7 @@ Resume point for any new working session. Update the checkboxes as work lands.
 - [x] End-to-end ingest -> query test
 
 ### Phase 2: platform
-- [x] rag2-laya: faithful port + DecisionProvider adapter (in-process and HTTP)
+- [x] Decision models: d1 (System One, llama.cpp), Laya in-process and HTTP
 - [x] Embedding providers (candle local, HTTP), config-selected
 - [x] Security: OIDC/JWT, API keys, RBAC/policy, audit, rate limit, encrypted secrets, TLS/mTLS
 - [x] Plugins: Wasmtime/WASI host, capabilities, quotas

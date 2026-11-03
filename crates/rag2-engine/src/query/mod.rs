@@ -63,38 +63,48 @@ fn us(t: Instant) -> u64 {
     t.elapsed().as_micros() as u64
 }
 
-fn ask_yes(
+/// Ask the gate's yes/no question over each state. `None` (model missing, failed or unsure)
+/// keeps the item: a broken gate must not silently delete evidence.
+fn ask_yes_each(
     comps: &Components,
     gate: &DecisionGate,
-    state: &str,
+    states: &[String],
     warnings: &mut Vec<String>,
-) -> Option<bool> {
+) -> Vec<Option<bool>> {
     let Some(m) = comps.decision_models.get(&gate.model) else {
         warnings.push(format!(
             "decision model {} not loaded; gate skipped",
             gate.model
         ));
-        return None;
+        return vec![None; states.len()];
     };
     let q = [Question::YesNo {
         instructions: gate.instructions.clone(),
     }];
-    match m
-        .decide(state, &q)
-        .and_then(|a| check_answers(&q, &a).map(|_| a))
-    {
-        Ok(a) => match a.as_slice() {
-            [Answer::YesNo { yes, confidence }] if *confidence >= gate.min_confidence => Some(*yes),
-            _ => None,
-        },
-        Err(e) => {
-            warnings.push(format!(
-                "decision model {} failed ({e}); gate skipped",
-                gate.model
-            ));
-            None
-        }
+    let mut failed = None;
+    let out = m
+        .decide_each(states, &q)
+        .into_iter()
+        .map(|r| match r.and_then(|a| check_answers(&q, &a).map(|_| a)) {
+            Ok(a) => match a.as_slice() {
+                [Answer::YesNo { yes, confidence }] if *confidence >= gate.min_confidence => {
+                    Some(*yes)
+                }
+                _ => None,
+            },
+            Err(e) => {
+                failed.get_or_insert(e);
+                None
+            }
+        })
+        .collect();
+    if let Some(e) = failed {
+        warnings.push(format!(
+            "decision model {} failed ({e}); gate skipped",
+            gate.model
+        ));
     }
+    out
 }
 
 impl Engine {
@@ -269,14 +279,16 @@ impl Engine {
         if let Some(gate) = &pl.relevance_gate {
             let before = ev.len();
             ev.truncate(top_k);
-            ev.retain(|e| {
-                ask_yes(
-                    &comps,
-                    gate,
-                    &format!("Query: {q}\nPassage: {}", e.text),
-                    &mut warnings,
-                ) != Some(false)
-            });
+            let states: Vec<String> = ev
+                .iter()
+                .map(|e| format!("Query: {q}\nPassage: {}", e.text))
+                .collect();
+            let keep = ask_yes_each(&comps, gate, &states, &mut warnings);
+            ev = ev
+                .into_iter()
+                .zip(keep)
+                .filter_map(|(e, k)| (k != Some(false)).then_some(e))
+                .collect();
             gated_out = before > 0 && ev.is_empty();
         }
         ev.truncate(top_k);
@@ -531,12 +543,15 @@ fn confirm(
             .map(|e| e.text.as_str())
             .unwrap_or("")
     };
+    let states: Vec<String> = found
+        .iter()
+        .map(|c| format!("Passage A: {}\nPassage B: {}", text(c.a), text(c.b)))
+        .collect();
+    let keep = ask_yes_each(comps, gate, &states, warnings);
     found
         .into_iter()
-        .filter(|c| {
-            let state = format!("Passage A: {}\nPassage B: {}", text(c.a), text(c.b));
-            ask_yes(comps, gate, &state, warnings) != Some(false)
-        })
+        .zip(keep)
+        .filter_map(|(c, k)| (k != Some(false)).then_some(c))
         .collect()
 }
 

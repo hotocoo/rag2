@@ -1,7 +1,7 @@
 //! ModernBERT encoder, vendored from candle-transformers 0.9.2 `models/modernbert.rs`
 //! (MIT OR Apache-2.0, https://github.com/huggingface/candle; recorded in `third_party/candle-modernbert.pin`).
 //! Kept: the encoder (config, rotary embedding, attention, MLP, layers, masks). Removed: the
-//! masked-LM and classifier heads Laya does not use. Changed (ADR-249): the MLP's GeGLU runs as one
+//! masked-LM and classifier heads Laya does not use. Changed: the MLP's GeGLU runs as one
 //! fused, parallel CPU pass (`fused::geglu`), and the config accepts the newer `rope_parameters`.
 
 use candle_core::{D, DType, Device, Result, Tensor};
@@ -107,12 +107,12 @@ impl ModernBertAttention {
 
         let scale = (self.attention_head_size as f64).powf(-0.5);
         let cpu = q.device().is_cpu() && q.dtype() == DType::F32;
-        // On the CPU the scale is applied inside the fused softmax (ADR-249), not as a pass over q.
+        // On the CPU the scale is applied inside the fused softmax, not as a pass over q.
         let q = if cpu { q } else { (q * scale)? };
 
         let att = q.matmul(&k.transpose(D::Minus2, D::Minus1)?)?;
 
-        // Mask and softmax in one pass on the CPU (ADR-249); elsewhere candle's own ops.
+        // Mask and softmax in one pass on the CPU; elsewhere candle's own ops.
         let att = if cpu {
             crate::fused::masked_softmax(&att, attention_mask, scale as f32)?
         } else {
@@ -150,7 +150,7 @@ impl ModernBertMLP {
 impl Module for ModernBertMLP {
     fn forward(&self, xs: &Tensor) -> Result<Tensor> {
         let xs = xs.apply(&self.wi)?;
-        // GeGLU fused into one pass on the CPU (ADR-249); the GPU keeps candle's own ops.
+        // GeGLU fused into one pass on the CPU; the GPU keeps candle's own ops.
         let xs = if xs.device().is_cpu() && xs.dtype() == DType::F32 {
             crate::fused::geglu(&xs)?
         } else {
@@ -209,7 +209,7 @@ impl ModernBertLayer {
             xs = xs.apply(norm)?;
         }
 
-        // The sliding-window layers get the combined mask, computed once per forward pass (ADR-249)
+        // The sliding-window layers get the combined mask, computed once per forward pass
         // rather than once per layer.
         let attention_mask = if self.uses_local_attention {
             local_attention_mask
@@ -347,7 +347,7 @@ impl ModernBert {
 }
 
 /// A bias-free LayerNorm given a zero bias, so candle runs its fused one-pass kernel instead of
-/// the seven-op fallback it uses when there is no bias (ADR-249). Same arithmetic: adding zero.
+/// the seven-op fallback it uses when there is no bias. Same arithmetic: adding zero.
 fn layer_norm_zero_bias(size: usize, eps: f64, vb: VarBuilder) -> Result<LayerNorm> {
     let weight = vb.get(size, "weight")?;
     let bias = Tensor::zeros(size, weight.dtype(), weight.device())?;

@@ -280,6 +280,19 @@ fn decision_model(v: &mut V, name: &str, d: &DecisionModelConfig) {
             }
             v.positive(at("timeout_ms"), *timeout_ms as usize);
         }
+        DecisionModelConfig::SystemOne {
+            endpoint,
+            serve_id,
+            timeout_ms,
+            concurrency,
+        } => {
+            http_endpoint(v, at("endpoint"), endpoint);
+            if serve_id.trim().is_empty() {
+                v.err(at("serve_id"), "must not be empty");
+            }
+            v.positive(at("timeout_ms"), *timeout_ms as usize);
+            v.positive(at("concurrency"), *concurrency);
+        }
     }
 }
 

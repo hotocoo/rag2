@@ -1,6 +1,6 @@
 [package]
 name = "rag2-laya"
-description = "Faithful adapter for Laya decision checkpoints (ported from aletheia-laya 0.8.0): in-process candle inference and the HTTP decision wire"
+description = "Decision models for RAG2: in-process Laya checkpoints on candle, Laya and System One (d1) HTTP adapters"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,7 +9,7 @@ publish.workspace = true
 
 [features]
 default = []
-# Apple GPU (Metal) and Accelerate BLAS, as aletheia-laya enables on macOS.
+# Apple GPU (Metal) and Accelerate BLAS.
 metal = ["candle-core/metal", "candle-core/accelerate", "candle-nn/metal", "candle-nn/accelerate"]
 # NVIDIA GPU.
 cuda = ["candle-core/cuda", "candle-nn/cuda"]

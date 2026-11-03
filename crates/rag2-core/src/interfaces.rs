@@ -72,7 +72,7 @@ pub trait Plugin: Send + Sync {
     ) -> Result<serde_json::Value>;
 }
 
-/// One typed question for a decision model (Laya's wire, Aletheia ADR-186).
+/// One typed question for a decision model.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Question {
@@ -110,12 +110,17 @@ impl Answer {
 }
 
 /// A non-generative decision model: a state and typed questions in, calibrated answers out, in
-/// one pass. Mirrors Aletheia's `DecisionProvider`. An answer the provider could not give fails the
+/// one pass. An answer the provider could not give fails the
 /// whole call; a partial answer set would let the caller act on half a decision.
 pub trait DecisionProvider: Send + Sync {
     fn name(&self) -> &str;
     fn healthy(&self) -> bool;
     fn decide(&self, state: &str, questions: &[Question]) -> Result<Vec<Answer>>;
+    /// The same questions over several states, one result per state in order. Providers that can
+    /// serve requests concurrently override this; the default asks one state at a time.
+    fn decide_each(&self, states: &[String], questions: &[Question]) -> Vec<Result<Vec<Answer>>> {
+        states.iter().map(|s| self.decide(s, questions)).collect()
+    }
 }
 
 /// Validate a provider's answers against the questions asked: same count, offered labels only,

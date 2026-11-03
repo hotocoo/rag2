@@ -94,6 +94,13 @@ unused_must_use = "deny"
 unwrap_used = "warn"
 dbg_macro = "deny"
 
+# Line tables keep backtraces readable; full debuginfo grew target/debug past 30 GiB.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
 [profile.release]
 lto = "fat"
 codegen-units = 1
@@ -102,4 +109,3 @@ debug = "line-tables-only"
 
 [profile.bench]
 inherits = "release"
-panic = "unwind"

@@ -11,6 +11,7 @@ Working examples, all validated in CI (`crates/rag2-config/tests/examples.rs`):
 | `examples/profiles/local-hybrid.yaml` | loopback dev, rule routing, multi-hop, graph |
 | `examples/profiles/production-oidc.yaml` | OIDC + API keys, mTLS, encryption, quotas, overlays |
 | `examples/profiles/laya-routing.yaml` | Laya decision routing and relevance gate |
+| `examples/profiles/d1-systemone.yaml` | Liquid AI d1 (llama.cpp) routing, relevance gate, contradiction check |
 | `examples/profiles/openai-embeddings.yaml` | OpenAI-compatible embeddings |
 | `examples/profiles/modernbert-local.yaml` | local ModernBERT embeddings on candle |
 
@@ -25,7 +26,7 @@ Working examples, all validated in CI (`crates/rag2-config/tests/examples.rs`):
 | `indexes.vector` | flat/HNSW threshold, HNSW `m`, `ef_construction`, `ef_search`, tombstone ratio | live |
 | `indexes.lexical` | tokenizer (`default`, `en_stem`, `whitespace`), writer heap, commit interval | live |
 | `embedders.<name>` | `hash`, `candle`, `http` | live (reindex if dimension changes) |
-| `decision_models.<name>` | `laya_local`, `laya_http` | live |
+| `decision_models.<name>` | `system_one` (d1 on llama.cpp), `laya_local`, `laya_http` | live |
 | `pipelines.<name>` | retrievers, routing, fusion, dedup, multi-hop, contradiction, calibration, abstention, context, graph, relevance gate | live |
 | `default_pipeline` | pipeline when none is named | live |
 | `cache` | query cache size/TTL, chunk and document caches | live (TTL) |
