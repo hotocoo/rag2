@@ -61,9 +61,14 @@ error). The fitted `slope`/`intercept` go into `pipelines.<name>.calibration`.
 | hash | lexical | 0.520 | 0.254 | -0.586 | 0.3237 | 0.0845 |
 | hash | dense | 0.143 | 2.969 | -2.731 | 0.4351 | 0.0537 |
 | hash | hybrid | 0.310 | 2.520 | -2.304 | 0.3387 | 0.0671 |
+| modernbert-embed-base | lexical | 0.520 | 0.240 | -0.627 | 0.3007 | 0.1174 |
+| modernbert-embed-base | dense | 0.580 | 1.687 | -1.553 | 0.2160 | 0.0853 |
+| modernbert-embed-base | hybrid | 0.567 | 2.036 | -2.369 | 0.1956 | 0.0697 |
 
-The uncalibrated score is not a probability: its expected calibration error is 0.31 to 0.37. Calibration on 150 labelled queries brings the error to 0.07 to 0.11 on unseen queries.
-The ModernBERT run predates the calibration step; rerun it to get its coefficients.
+The uncalibrated score is not a probability: its expected calibration error is 0.20 to 0.44.
+Calibration on 150 labelled queries brings it to 0.05 to 0.12 on unseen queries. ModernBERT run
+of 2026-11-03 (Metal); the coefficients depend on the embedder and the corpus, so fit them on
+your own labelled queries.
 
 ## Latency and throughput
 

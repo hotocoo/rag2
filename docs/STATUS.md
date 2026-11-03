@@ -54,7 +54,8 @@ Resume point for any new working session. Update the checkboxes as work lands.
   edit -> server preview -> apply (new version authored by the key), playground, docs, audit.
   Toolchain pinned to rustup 1.99.1 (`rust-toolchain.toml`) for wasm32.
 - Calibration: rag2-bench fits Platt (Newton + ridge) on half the queries; held-out ECE
-  0.31-0.37 -> 0.07-0.11 on SciFact (hash embedder runs).
+  0.20-0.44 -> 0.05-0.12 on SciFact (hash and ModernBERT runs; ModernBERT hybrid slope 2.036,
+  intercept -2.369, ECE 0.196 -> 0.070).
 - OIDC verified with mock JWKS; alg/key-type allow-list prevents algorithm confusion.
 - Repository: github.com/hotocoo/rag2 (private), branch `main`.
 - Supply chain: `cargo deny check licenses bans sources` passes (0BSD allowed for varint-rs via
