@@ -56,8 +56,12 @@ pub fn factories() -> Vec<Arc<dyn ComponentFactory>> {
     f
 }
 
+fn data_dir(dir: &Path) -> String {
+    dir.join(DATA_DIR).to_string_lossy().into_owned()
+}
+
 fn manager(dir: &Path) -> Result<Arc<ConfigManager>> {
-    let data = dir.join(DATA_DIR).to_string_lossy().into_owned();
+    let data = data_dir(dir);
     let store = Arc::new(FsConfigStore::open(dir.join(CONFIG_DIR))?);
     Ok(Arc::new(ConfigManager::open(
         store,
@@ -79,10 +83,15 @@ pub fn open(dir: impl AsRef<Path>) -> Result<Arc<Engine>> {
 }
 
 /// Open RAG2 in `dir` and activate `profile` as a new version when it differs from the active
-/// one (validated first; the previous version stays available for rollback).
+/// one (validated first; the previous version stays available for rollback). A profile that
+/// leaves `storage.data_dir` at its default stores data in `dir/data`.
 pub fn open_with_profile(dir: impl AsRef<Path>, profile: &Profile) -> Result<Arc<Engine>> {
     let m = manager(dir.as_ref())?;
-    let value = serde_json::to_value(profile).map_err(Error::internal)?;
+    let mut profile = profile.clone();
+    if profile.storage.data_dir == rag2_config::defaults::DATA_DIR {
+        profile.storage.data_dir = data_dir(dir.as_ref());
+    }
+    let value = serde_json::to_value(&profile).map_err(Error::internal)?;
     m.apply(&value, "rag2::open_with_profile", "embedded profile")?;
     Engine::open(m, factories())
 }

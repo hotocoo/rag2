@@ -43,6 +43,8 @@ tempfile.workspace = true
 tokio.workspace = true
 tower.workspace = true
 axum.workspace = true
+rag2-client.workspace = true
+reqwest.workspace = true
 
 [lints]
 workspace = true
